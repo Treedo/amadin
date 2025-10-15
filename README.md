@@ -73,8 +73,12 @@ Amadin дозволяє створювати бізнес-додатки або 
 
 1. Встановіть залежності: `npm install`
 2. Згенеруйте демо-схему: `npm run generate`
-3. Запустіть сервер: `npm run dev:server`
-4. У новій консолі запустіть фронтенд: `npm run dev:client`
+3. Запустіть базу даних (за необхідністю) `docker compose up -d`
+4. Генарція prisma `npx prisma generate --schema=core/core.prisma`
+5. Застосуйте Prisma-схему у базі `npx prisma db push --schema=core/core.prisma`
+6. Запустіть seed `npm run seed`
+7. Запустіть сервер: `npm run dev:server`
+8. У новій консолі запустіть фронтенд: `npm run dev:client`
 
 CLI-версія: `npm run cli -- start --client`
 

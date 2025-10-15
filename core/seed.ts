@@ -1,9 +1,15 @@
 /// <reference types="node" />
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from './prisma-client/index.js';
+
+import path from 'path';
+import dotenv from 'dotenv';
+
+// Завантажити .env з кореня проекту (гарантуємо правильний шлях)
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 // The generated Prisma client will live in core/prisma-client after `prisma generate`.
 // Until migrations are applied, this script simply demonstrates the expected seeding flow.
-const prisma = new PrismaClient() as any;
+const prisma = new PrismaClient();
 
 async function seed() {
   const accountingModule = await prisma.module.upsert({
@@ -63,6 +69,24 @@ async function seed() {
   });
 
   if (!existingForm) {
+    const headerFields: Prisma.FormFieldCreateWithoutGroupInput[] = [];
+
+    if (numberField) {
+      headerFields.push({
+        widget: 'INPUT',
+        order: 0,
+        field: { connect: { id: numberField.id } }
+      });
+    }
+
+    if (totalField) {
+      headerFields.push({
+        widget: 'INPUT',
+        order: 1,
+        field: { connect: { id: totalField.id } }
+      });
+    }
+
     await prisma.form.create({
       data: {
         code: 'invoiceForm',
@@ -82,22 +106,7 @@ async function seed() {
               title: 'Header',
               order: 0,
               fields: {
-                create: [
-                  numberField
-                    ? {
-                        widget: 'INPUT',
-                        order: 0,
-                        field: { connect: { id: numberField.id } }
-                      }
-                    : undefined,
-                  totalField
-                    ? {
-                        widget: 'INPUT',
-                        order: 1,
-                        field: { connect: { id: totalField.id } }
-                      }
-                    : undefined
-                ].filter(Boolean)
+                create: headerFields
               }
             }
           ]

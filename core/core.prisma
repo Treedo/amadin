@@ -29,8 +29,9 @@ model Entity {
   name        String
   fields      Field[]
   primaryKey  Field?     @relation("PrimaryKey", fields: [primaryKeyId], references: [id])
-  primaryKeyId Int?
+  primaryKeyId Int?      @unique
   documents   DocumentSchema?
+  formEntities FormEntity[]
   @@unique([moduleId, code])
 }
 
@@ -43,6 +44,8 @@ model Field {
   type      FieldType
   required  Boolean @default(false)
   isPrimary Boolean @default(false)
+  primaryFor Entity? @relation("PrimaryKey")
+  formFields FormField[]
   @@unique([entityId, code])
 }
 
@@ -54,6 +57,7 @@ model Form {
   name      String
   entities  FormEntity[]
   groups    FormGroup[]
+  documentTable DocumentSchema? @relation("DocumentTable")
   @@unique([moduleId, code])
 }
 
@@ -116,7 +120,7 @@ model DocumentSchema {
   entity    Entity   @relation(fields: [entityId], references: [id])
   entityId  Int      @unique
   tableView Form?    @relation("DocumentTable", fields: [tableViewId], references: [id])
-  tableViewId Int?
+  tableViewId Int?   @unique
   sequence  Sequence?
 }
 
@@ -126,5 +130,5 @@ model Sequence {
   padding    Int              @default(6)
   nextNumber Int              @default(1)
   document   DocumentSchema?  @relation(fields: [documentId], references: [id])
-  documentId Int?
+  documentId Int?             @unique
 }

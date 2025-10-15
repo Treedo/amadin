@@ -1,0 +1,20 @@
+[
+  {
+    "code": "invoiceForm",
+    "name": "Invoice",
+    "layout": [
+      {
+        "entity": "invoice",
+        "field": "number",
+        "label": "Number",
+        "widget": "input"
+      },
+      {
+        "entity": "invoice",
+        "field": "total",
+        "label": "Total",
+        "widget": "input"
+      }
+    ]
+  }
+]

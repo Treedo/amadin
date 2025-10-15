@@ -1,0 +1,25 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("APP_DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./prisma-client"
+}
+
+model Company {
+  id        String   @id @default(uuid())
+  name String?
+  taxCode String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Invoice {
+  id        String   @id @default(uuid())
+  number String?
+  total Decimal?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
