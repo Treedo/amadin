@@ -21,6 +21,39 @@ export interface AppManifest {
   manifest: UiForm[];
 }
 
+export interface CatalogLink {
+  code: string;
+  name: string;
+  href: string;
+  fields: Array<{ code: string; name: string; type: string; required: boolean }>;
+}
+
+export interface DocumentLink {
+  code: string;
+  name: string;
+  href: string;
+  layout: UiField[];
+}
+
+export interface AppOverviewEntry {
+  id: string;
+  name: string;
+  summary: {
+    catalogCount: number;
+    documentCount: number;
+  };
+  links: {
+    manifest: string;
+    catalogs: CatalogLink[];
+    documents: DocumentLink[];
+  };
+}
+
+export interface AppOverviewResponse {
+  generatedAt: string;
+  applications: AppOverviewEntry[];
+}
+
 export async function fetchApplications(): Promise<ApplicationMeta[]> {
   const response = await fetch('/api/apps');
   if (!response.ok) {
@@ -36,6 +69,14 @@ export async function fetchApplication(appId: string): Promise<AppManifest> {
     throw new Error('Failed to fetch application');
   }
   return (await response.json()) as AppManifest;
+}
+
+export async function fetchAppOverview(): Promise<AppOverviewResponse> {
+  const response = await fetch('/');
+  if (!response.ok) {
+    throw new Error('Failed to fetch application overview');
+  }
+  return (await response.json()) as AppOverviewResponse;
 }
 
 export async function fetchEntityRows(appId: string, entityCode: string): Promise<unknown[]> {

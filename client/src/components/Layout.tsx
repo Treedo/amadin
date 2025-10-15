@@ -1,4 +1,6 @@
 import { ReactNode } from 'react';
+import { useMemo } from 'react';
+
 import { useAmadin } from '../context/AmadinContext.js';
 
 interface LayoutProps {
@@ -6,7 +8,9 @@ interface LayoutProps {
 }
 
 export function Layout({ children }: LayoutProps) {
-  const { applications, selectApp, currentApp } = useAmadin();
+  const { applications, selectApp, currentApp, overview } = useAmadin();
+
+  const activeOverview = useMemo(() => overview?.find((item) => item.id === currentApp?.meta.id), [overview, currentApp]);
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', minHeight: '100vh', fontFamily: 'sans-serif' }}>
@@ -34,6 +38,26 @@ export function Layout({ children }: LayoutProps) {
             </li>
           ))}
         </ul>
+        {activeOverview && (
+          <div style={{ marginTop: '2rem', fontSize: '0.9rem', color: '#555', display: 'grid', gap: '0.75rem' }}>
+            <div>
+              <strong>Каталоги</strong>
+              <ul style={{ paddingLeft: '1.25rem', margin: '0.5rem 0 0 0' }}>
+                {activeOverview.links.catalogs.map((catalog) => (
+                  <li key={catalog.code}>{catalog.name}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <strong>Документи</strong>
+              <ul style={{ paddingLeft: '1.25rem', margin: '0.5rem 0 0 0' }}>
+                {activeOverview.links.documents.map((document) => (
+                  <li key={document.code}>{document.name}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
       </aside>
       <main style={{ padding: '2rem' }}>{children}</main>
     </div>

@@ -6,7 +6,7 @@ import { useAmadin } from './context/AmadinContext.js';
 import { useSession } from './hooks/useSession.js';
 
 export function App() {
-  const { currentApp, loading, applications, selectApp } = useAmadin();
+  const { currentApp, loading, applications, overview, selectApp } = useAmadin();
   const { session, login, logout } = useSession();
 
   useEffect(() => {
@@ -43,7 +43,60 @@ export function App() {
           )}
         </div>
       ) : (
-        !loading && <p>Немає доступних конфігурацій.</p>
+        !loading && (
+          <div style={{ display: 'grid', gap: '1.5rem' }}>
+            <h3>Доступні застосунки</h3>
+            {overview?.map((app) => (
+              <article key={app.id} style={{ border: '1px solid #eee', borderRadius: '1rem', padding: '1.5rem' }}>
+                <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <h4 style={{ margin: '0 0 0.25rem 0' }}>{app.name}</h4>
+                    <small style={{ color: '#666' }}>Каталоги: {app.summary.catalogCount} · Документи: {app.summary.documentCount}</small>
+                  </div>
+                  <button onClick={() => selectApp(app.id)}>Відкрити</button>
+                </header>
+                <section style={{ marginTop: '1rem', display: 'grid', gap: '1rem' }}>
+                  <div>
+                    <h5 style={{ margin: '0 0 0.5rem 0' }}>Каталоги</h5>
+                    {app.links.catalogs.length ? (
+                      <ul style={{ margin: 0, paddingLeft: '1.25rem' }}>
+                        {app.links.catalogs.map((catalog) => (
+                          <li key={catalog.code}>
+                            <strong>{catalog.name}</strong>
+                            <small style={{ marginLeft: '0.5rem', color: '#666' }}>({catalog.code})</small>
+                            <div style={{ fontSize: '0.85rem', color: '#666' }}>
+                              Поля: {catalog.fields.map((field) => `${field.name}${field.required ? '*' : ''}`).join(', ')}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p style={{ margin: 0, color: '#666' }}>Немає довідників.</p>
+                    )}
+                  </div>
+                  <div>
+                    <h5 style={{ margin: '0 0 0.5rem 0' }}>Документи</h5>
+                    {app.links.documents.length ? (
+                      <ul style={{ margin: 0, paddingLeft: '1.25rem' }}>
+                        {app.links.documents.map((document) => (
+                          <li key={document.code}>
+                            <strong>{document.name}</strong>
+                            <small style={{ marginLeft: '0.5rem', color: '#666' }}>({document.code})</small>
+                            <div style={{ fontSize: '0.85rem', color: '#666' }}>
+                              Поля: {document.layout.map((field) => field.label).join(', ')}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p style={{ margin: 0, color: '#666' }}>Немає документів.</p>
+                    )}
+                  </div>
+                </section>
+              </article>
+            ))}
+          </div>
+        )
       )}
     </Layout>
   );
