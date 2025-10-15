@@ -1,0 +1,12 @@
+{
+  "title": "Invoice form",
+  "groups": [
+    {
+      "title": "Header",
+      "fields": [
+        { "label": "Number", "path": "invoice.number" },
+        { "label": "Total", "path": "invoice.total" }
+      ]
+    }
+  ]
+}

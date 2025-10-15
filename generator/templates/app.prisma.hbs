@@ -1,0 +1,20 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("APP_DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./prisma-client"
+}
+
+{{#each entities}}
+model {{pascalCase code}} {
+  id        String   @id @default(uuid())
+{{#each fields}}
+  {{camelCase code}} {{prismaType type}} {{requiredFlag required}}
+{{/each}}
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+{{/each}}

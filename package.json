@@ -1,0 +1,36 @@
+{
+  "name": "amadin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit",
+    "dev:server": "tsx server/index.ts",
+    "dev:client": "vite --config client/vite.config.ts",
+    "generate": "tsx generator/index.ts",
+    "seed": "tsx core/seed.ts",
+    "cli": "tsx cli/index.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "5.18.0",
+    "commander": "11.1.0",
+    "fastify": "4.27.2",
+    "node-fetch": "3.3.2",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "zod": "3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "20.14.12",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "@vitejs/plugin-react": "4.3.2",
+    "prisma": "5.18.0",
+    "ts-node": "10.9.2",
+    "tslib": "2.6.2",
+    "tsx": "4.16.2",
+    "typescript": "5.5.4",
+    "vite": "5.4.2"
+  }
+}

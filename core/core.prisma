@@ -1,0 +1,130 @@
+// Core meta-schema describing modules, entities, fields, forms and access rules
+// This schema powers the Amadin runtime by defining how individual applications
+// should be generated and executed.
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./prisma-client"
+}
+
+model Module {
+  id        Int       @id @default(autoincrement())
+  code      String    @unique
+  name      String
+  entities  Entity[]
+  forms     Form[]
+  createdAt DateTime  @default(now())
+}
+
+model Entity {
+  id          Int        @id @default(autoincrement())
+  module      Module     @relation(fields: [moduleId], references: [id])
+  moduleId    Int
+  code        String
+  name        String
+  fields      Field[]
+  primaryKey  Field?     @relation("PrimaryKey", fields: [primaryKeyId], references: [id])
+  primaryKeyId Int?
+  documents   DocumentSchema?
+  @@unique([moduleId, code])
+}
+
+model Field {
+  id        Int     @id @default(autoincrement())
+  entity    Entity  @relation(fields: [entityId], references: [id])
+  entityId  Int
+  code      String
+  name      String
+  type      FieldType
+  required  Boolean @default(false)
+  isPrimary Boolean @default(false)
+  @@unique([entityId, code])
+}
+
+model Form {
+  id        Int       @id @default(autoincrement())
+  module    Module    @relation(fields: [moduleId], references: [id])
+  moduleId  Int
+  code      String
+  name      String
+  entities  FormEntity[]
+  groups    FormGroup[]
+  @@unique([moduleId, code])
+}
+
+model FormEntity {
+  id       Int    @id @default(autoincrement())
+  form     Form   @relation(fields: [formId], references: [id])
+  formId   Int
+  entity   Entity @relation(fields: [entityId], references: [id])
+  entityId Int
+  mode     FormMode
+  @@unique([formId, entityId])
+}
+
+model FormGroup {
+  id       Int       @id @default(autoincrement())
+  form     Form      @relation(fields: [formId], references: [id])
+  formId   Int
+  title    String
+  fields   FormField[]
+  order    Int       @default(0)
+}
+
+model FormField {
+  id          Int       @id @default(autoincrement())
+  group       FormGroup @relation(fields: [groupId], references: [id])
+  groupId     Int
+  field       Field     @relation(fields: [fieldId], references: [id])
+  fieldId     Int
+  widget      WidgetType
+  isReadOnly  Boolean   @default(false)
+  order       Int       @default(0)
+  expression  String?
+}
+
+enum FieldType {
+  STRING
+  TEXT
+  NUMBER
+  DECIMAL
+  DATE
+  BOOLEAN
+  GRID
+}
+
+enum FormMode {
+  SINGLE
+  TABLE
+}
+
+enum WidgetType {
+  INPUT
+  TEXTAREA
+  SELECT
+  DATEPICKER
+  SWITCH
+}
+
+model DocumentSchema {
+  id        Int      @id @default(autoincrement())
+  entity    Entity   @relation(fields: [entityId], references: [id])
+  entityId  Int      @unique
+  tableView Form?    @relation("DocumentTable", fields: [tableViewId], references: [id])
+  tableViewId Int?
+  sequence  Sequence?
+}
+
+model Sequence {
+  id         Int             @id @default(autoincrement())
+  prefix     String?
+  padding    Int              @default(6)
+  nextNumber Int              @default(1)
+  document   DocumentSchema?  @relation(fields: [documentId], references: [id])
+  documentId Int?
+}

@@ -1,0 +1,32 @@
+{
+  "appId": "demo-app",
+  "name": "Demo Accounting",
+  "entities": [
+    {
+      "code": "company",
+      "name": "Company",
+      "fields": [
+        { "code": "name", "name": "Name", "type": "string" },
+        { "code": "taxCode", "name": "Tax Code", "type": "string" }
+      ]
+    },
+    {
+      "code": "invoice",
+      "name": "Invoice",
+      "fields": [
+        { "code": "number", "name": "Number", "type": "string" },
+        { "code": "total", "name": "Total", "type": "decimal" }
+      ]
+    }
+  ],
+  "forms": [
+    {
+      "code": "invoiceForm",
+      "name": "Invoice",
+      "layout": [
+        { "entity": "invoice", "field": "number", "widget": "input" },
+        { "entity": "invoice", "field": "total", "widget": "input" }
+      ]
+    }
+  ]
+}
