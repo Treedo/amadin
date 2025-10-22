@@ -1,8 +1,3 @@
-export interface ApplicationMeta {
-  id: string;
-  name: string;
-}
-
 export type UiFormGroupItem =
   | {
       kind: 'field';
@@ -37,7 +32,10 @@ export interface UiForm {
 }
 
 export interface AppManifest {
-  meta: ApplicationMeta;
+  meta: {
+    id: string;
+    name: string;
+  };
   manifest: UiForm[];
 }
 
@@ -74,17 +72,8 @@ export interface AppOverviewResponse {
   applications: AppOverviewEntry[];
 }
 
-export async function fetchApplications(): Promise<ApplicationMeta[]> {
-  const response = await fetch('/api/apps');
-  if (!response.ok) {
-    throw new Error('Failed to fetch applications');
-  }
-  const json = await response.json();
-  return json.applications as ApplicationMeta[];
-}
-
-export async function fetchApplication(appId: string): Promise<AppManifest> {
-  const response = await fetch(`/app/${appId}`);
+export async function fetchApplication(): Promise<AppManifest> {
+  const response = await fetch('/app');
   if (!response.ok) {
     throw new Error('Failed to fetch application');
   }
@@ -99,8 +88,8 @@ export async function fetchAppOverview(): Promise<AppOverviewResponse> {
   return (await response.json()) as AppOverviewResponse;
 }
 
-export async function fetchEntityRows(appId: string, entityCode: string): Promise<unknown[]> {
-  const response = await fetch(`/api/${appId}/entities/${entityCode}`);
+export async function fetchEntityRows(entityCode: string): Promise<unknown[]> {
+  const response = await fetch(`/api/entities/${entityCode}`);
   if (!response.ok) {
     throw new Error('Failed to fetch entity data');
   }

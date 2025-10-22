@@ -1,15 +1,13 @@
 import { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 
-import { getApplication } from '../services/dbRegistry.js';
+import { getDefaultAppId, getDefaultApplication } from '../services/dbRegistry.js';
 
 const appRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
-  fastify.get<{ Params: { appId: string } }>('/app/:appId', async (
-    request: FastifyRequest<{ Params: { appId: string } }>,
-    reply: FastifyReply
-  ) => {
-    const { appId } = request.params;
-    const application = getApplication(appId);
-    if (!application) {
+  fastify.get('/app', async (_request: FastifyRequest, reply: FastifyReply) => {
+    const application = getDefaultApplication();
+    const appId = getDefaultAppId();
+
+    if (!application || !appId) {
       reply.code(404);
       return { error: 'Application not found' };
     }
@@ -23,17 +21,19 @@ const appRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     };
   });
 
-  fastify.get<{ Params: { appId: string; formCode: string } }>('/app/:appId/forms/:formCode', async (
-    request: FastifyRequest<{ Params: { appId: string; formCode: string } }>,
+  fastify.get<{ Params: { formCode: string } }>('/app/forms/:formCode', async (
+    request: FastifyRequest<{ Params: { formCode: string } }>,
     reply: FastifyReply
   ) => {
-    const { appId, formCode } = request.params;
-    const application = getApplication(appId);
-    if (!application) {
+    const application = getDefaultApplication();
+    const appId = getDefaultAppId();
+
+    if (!application || !appId) {
       reply.code(404);
       return { error: 'Application not found' };
     }
 
+    const { formCode } = request.params;
     const form = application.manifest.find((item) => item.code === formCode);
     if (!form) {
       reply.code(404);

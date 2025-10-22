@@ -2,11 +2,10 @@ import { useEffect, useState } from 'react';
 import { fetchEntityRows } from '../api/index.js';
 
 interface TableViewProps {
-  appId: string;
   entityCode: string;
 }
 
-export function TableView({ appId, entityCode }: TableViewProps) {
+export function TableView({ entityCode }: TableViewProps) {
   const [rows, setRows] = useState<unknown[]>([]);
 
   useEffect(() => {
@@ -14,10 +13,10 @@ export function TableView({ appId, entityCode }: TableViewProps) {
       setRows([]);
       return;
     }
-    fetchEntityRows(appId, entityCode)
+    fetchEntityRows(entityCode)
       .then(setRows)
-      .catch((error) => console.error(error));
-  }, [appId, entityCode]);
+  .catch((error) => console.error('Failed to load entity rows', error));
+  }, [entityCode]);
 
   return (
     <table style={{ width: '100%', borderCollapse: 'collapse' }}>

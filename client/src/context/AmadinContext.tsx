@@ -1,48 +1,62 @@
-import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { AppManifest, ApplicationMeta, AppOverviewEntry } from '../api/index.js';
-import { fetchApplication, fetchApplications, fetchAppOverview } from '../api/index.js';
+import type { AppManifest, AppOverviewEntry } from '../api/index.js';
+import { fetchApplication, fetchAppOverview } from '../api/index.js';
 
 interface AmadinContextValue {
-  applications: ApplicationMeta[];
-  currentApp?: AppManifest;
-  selectApp: (appId: string) => Promise<void>;
+  appId?: string;
+  app?: AppManifest;
+  overview?: AppOverviewEntry;
   loading: boolean;
-  overview?: AppOverviewEntry[];
+  loadApp: (options?: { force?: boolean }) => Promise<AppManifest | undefined>;
 }
 
 const AmadinContext = createContext<AmadinContextValue | undefined>(undefined);
 
 export function AmadinProvider({ children }: { children: ReactNode }) {
-  const [applications, setApplications] = useState<ApplicationMeta[]>([]);
-  const [currentApp, setCurrentApp] = useState<AppManifest | undefined>();
+  const [appId, setAppId] = useState<string | undefined>();
+  const [app, setApp] = useState<AppManifest | undefined>();
+  const appRef = useRef<AppManifest | undefined>(undefined);
+  appRef.current = app;
+  const [overview, setOverview] = useState<AppOverviewEntry | undefined>();
   const [loading, setLoading] = useState(false);
-  const [overview, setOverview] = useState<AppOverviewEntry[] | undefined>();
 
   useEffect(() => {
-    Promise.all([fetchApplications(), fetchAppOverview()])
-      .then(([appList, overviewResponse]) => {
-        setApplications(appList);
-        setOverview(overviewResponse.applications);
+    fetchAppOverview()
+      .then((response) => {
+        const primaryApp = response.applications[0];
+        setOverview(primaryApp);
+        setAppId(primaryApp?.id);
       })
       .catch((error) => {
-        console.error('Failed to load applications', error);
+        console.error('Failed to load application overview', error);
       });
   }, []);
 
-  const selectApp = async (appId: string) => {
+  const loadApp = useCallback(async (options?: { force?: boolean }) => {
+    if (!options?.force && appRef.current) {
+      return appRef.current;
+    }
+
     setLoading(true);
     try {
-      const manifest = await fetchApplication(appId);
-      setCurrentApp(manifest);
+      const manifest = await fetchApplication();
+      setAppId(manifest.meta.id);
+      setApp(manifest);
+      appRef.current = manifest;
+      return manifest;
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void loadApp();
+  }, [loadApp]);
 
   const value = useMemo<AmadinContextValue>(
-    () => ({ applications, currentApp, selectApp, loading, overview }),
-    [applications, currentApp, loading, overview]
+    () => ({ appId, app, overview, loading, loadApp }),
+    [appId, app, overview, loading, loadApp]
   );
 
   return <AmadinContext.Provider value={value}>{children}</AmadinContext.Provider>;
