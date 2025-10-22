@@ -10,6 +10,10 @@ export function TableView({ appId, entityCode }: TableViewProps) {
   const [rows, setRows] = useState<unknown[]>([]);
 
   useEffect(() => {
+    if (!entityCode) {
+      setRows([]);
+      return;
+    }
     fetchEntityRows(appId, entityCode)
       .then(setRows)
       .catch((error) => console.error(error));

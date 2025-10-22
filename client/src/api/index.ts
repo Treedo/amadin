@@ -3,17 +3,37 @@ export interface ApplicationMeta {
   name: string;
 }
 
-export interface UiField {
-  entity: string;
-  field: string;
-  label: string;
-  widget: string;
+export type UiFormGroupItem =
+  | {
+      kind: 'field';
+      entity: string;
+      field: string;
+      label: string;
+      widget: string;
+      required: boolean;
+    }
+  | {
+      kind: 'link';
+      label: string;
+      target: string;
+      targetType: 'entity' | 'form' | 'url';
+      description?: string;
+    };
+
+export interface UiFormGroup {
+  code: string;
+  title: string;
+  orientation: 'horizontal' | 'vertical';
+  color: string;
+  autoGrow: boolean;
+  items: UiFormGroupItem[];
 }
 
 export interface UiForm {
   code: string;
   name: string;
-  layout: UiField[];
+  groups: UiFormGroup[];
+  primaryEntity?: string;
 }
 
 export interface AppManifest {
@@ -32,7 +52,7 @@ export interface DocumentLink {
   code: string;
   name: string;
   href: string;
-  layout: UiField[];
+  groups: UiFormGroup[];
 }
 
 export interface AppOverviewEntry {
@@ -72,7 +92,7 @@ export async function fetchApplication(appId: string): Promise<AppManifest> {
 }
 
 export async function fetchAppOverview(): Promise<AppOverviewResponse> {
-  const response = await fetch('/');
+  const response = await fetch('/api/overview');
   if (!response.ok) {
     throw new Error('Failed to fetch application overview');
   }

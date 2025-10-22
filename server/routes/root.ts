@@ -3,7 +3,7 @@ import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { getApplication, listApplications } from '../services/dbRegistry.js';
 
 const rootRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
-  fastify.get('/', async () => {
+  const overviewHandler = async () => {
     const apps = listApplications();
 
     const overview = apps.map(({ id, name }) => {
@@ -40,7 +40,8 @@ const rootRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
           code: form.code,
           name: form.name,
           href: `/app/${id}/forms/${form.code}`,
-          layout: manifestEntry?.layout ?? []
+          groups: manifestEntry?.groups ?? [],
+          primaryEntity: manifestEntry?.primaryEntity
         };
       });
 
@@ -66,7 +67,10 @@ const rootRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       generatedAt: new Date().toISOString(),
       applications: overview
     };
-  });
+  };
+
+  fastify.get('/', overviewHandler);
+  fastify.get('/api/overview', overviewHandler);
 
   fastify.get('/api/apps', async () => ({ applications: listApplications() }));
 };

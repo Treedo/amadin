@@ -21,11 +21,96 @@
   ],
   "forms": [
     {
+      "code": "overview",
+      "name": "Панель управління",
+      "groups": [
+        {
+          "code": "quickLinks",
+          "title": "Швидкі посилання",
+          "orientation": "horizontal",
+          "color": "neutral",
+          "autoGrow": true,
+          "items": [
+            {
+              "kind": "link",
+              "label": "Компанії",
+              "target": "entity:company",
+              "targetType": "entity",
+              "description": "Перехід до довідника компаній"
+            },
+            {
+              "kind": "link",
+              "label": "Рахунки",
+              "target": "entity:invoice",
+              "targetType": "entity",
+              "description": "Перегляд рахунків"
+            },
+            {
+              "kind": "link",
+              "label": "Форма рахунку",
+              "target": "form:invoiceForm",
+              "targetType": "form",
+              "description": "Відкриття форми введення рахунку"
+            }
+          ]
+        },
+        {
+          "code": "metrics",
+          "title": "Ключові показники",
+          "orientation": "vertical",
+          "color": "accent",
+          "autoGrow": true,
+          "items": [
+            {
+              "kind": "field",
+              "entity": "company",
+              "field": "name",
+              "widget": "input",
+              "label": "Назва компанії"
+            },
+            {
+              "kind": "field",
+              "entity": "invoice",
+              "field": "total",
+              "widget": "input",
+              "label": "Сума рахунку"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "code": "invoiceForm",
       "name": "Invoice",
-      "layout": [
-        { "entity": "invoice", "field": "number", "widget": "input" },
-        { "entity": "invoice", "field": "total", "widget": "input" }
+      "groups": [
+        {
+          "code": "main",
+          "title": "Основні дані",
+          "orientation": "vertical",
+          "color": "neutral",
+          "autoGrow": true,
+          "items": [
+            { "kind": "field", "entity": "invoice", "field": "number", "widget": "input" },
+            { "kind": "field", "entity": "invoice", "field": "total", "widget": "input" }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "companyForm",
+      "name": "Company",
+      "groups": [
+        {
+          "code": "main",
+          "title": "Реквізити",
+          "orientation": "vertical",
+          "color": "neutral",
+          "autoGrow": true,
+          "items": [
+            { "kind": "field", "entity": "company", "field": "name", "widget": "input" },
+            { "kind": "field", "entity": "company", "field": "taxCode", "widget": "input" }
+          ]
+        }
       ]
     }
   ]

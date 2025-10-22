@@ -11,7 +11,14 @@ export async function fetchApplication(appId) {
     if (!response.ok) {
         throw new Error('Failed to fetch application');
     }
-    return (await response.json());
+    return await response.json();
+}
+export async function fetchAppOverview() {
+    const response = await fetch('/api/overview');
+    if (!response.ok) {
+        throw new Error('Failed to fetch application overview');
+    }
+    return await response.json();
 }
 export async function fetchEntityRows(appId, entityCode) {
     const response = await fetch(`/api/${appId}/entities/${entityCode}`);

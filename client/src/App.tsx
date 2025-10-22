@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { FormRenderer } from './components/FormRenderer.js';
 import { Layout } from './components/Layout.js';
 import { TableView } from './components/TableView.js';
@@ -10,10 +10,12 @@ export function App() {
   const { session, login, logout } = useSession();
 
   useEffect(() => {
-    if (!currentApp && applications[0]) {
+    if (!currentApp && applications.length > 0) {
       void selectApp(applications[0].id);
     }
   }, [applications, currentApp, selectApp]);
+
+  const primaryEntity = useMemo(() => currentApp?.manifest?.[0]?.primaryEntity ?? '', [currentApp]);
 
   return (
     <Layout>
@@ -36,8 +38,8 @@ export function App() {
       {currentApp ? (
         <div style={{ display: 'grid', gap: '2rem' }}>
           <FormRenderer app={currentApp} />
-          {currentApp.manifest[0]?.layout[0]?.entity ? (
-            <TableView appId={currentApp.meta.id} entityCode={currentApp.manifest[0]?.layout[0]?.entity ?? ''} />
+          {primaryEntity ? (
+            <TableView appId={currentApp.meta.id} entityCode={primaryEntity} />
           ) : (
             <p>Додайте принаймні одне поле з прив'язкою до сутності, щоб побачити табличні дані.</p>
           )}
@@ -83,7 +85,15 @@ export function App() {
                             <strong>{document.name}</strong>
                             <small style={{ marginLeft: '0.5rem', color: '#666' }}>({document.code})</small>
                             <div style={{ fontSize: '0.85rem', color: '#666' }}>
-                              Поля: {document.layout.map((field) => field.label).join(', ')}
+                              Поля:
+                              {document.groups
+                                .flatMap((group) =>
+                                  group.items
+                                    .filter((item) => item.kind === 'field')
+                                    .map((item) => item.kind === 'field' ? item.label : '')
+                                )
+                                .filter(Boolean)
+                                .join(', ')}
                             </div>
                           </li>
                         ))}
