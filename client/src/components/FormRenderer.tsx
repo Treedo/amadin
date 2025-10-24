@@ -68,7 +68,6 @@ export function FormRenderer({ app, formCode }: FormRendererProps) {
     <section>
       <header>
         <h2>{activeForm.name}</h2>
-        <p>Щоб побачити форму, відредагуйте `examples/demo-config.json`.</p>
       </header>
       <div style={{ display: 'grid', gap: '1.5rem' }}>
         {activeForm.groups.map((group) => (

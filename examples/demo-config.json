@@ -201,6 +201,13 @@
     }
   ],
   "sidebar": [
+  {
+      "code": "dashboards",
+      "title": "Дашборди",
+      "items": [
+        { "type": "overview", "target": "overview", "label": "Панель управління", "icon": "📊" }
+      ]
+    },
     {
       "code": "catalogs",
       "title": "Каталоги",
@@ -215,13 +222,6 @@
       "items": [
         { "type": "form", "target": "goodsReceiptForm", "label": "Надходження товарів", "icon": "⬆️" },
         { "type": "form", "target": "goodsShipmentForm", "label": "Видаткова накладна", "icon": "⬇️" }
-      ]
-    },
-    {
-      "code": "dashboards",
-      "title": "Дашборди",
-      "items": [
-        { "type": "overview", "target": "overview", "label": "Панель управління", "icon": "📊" }
       ]
     }
   ]
