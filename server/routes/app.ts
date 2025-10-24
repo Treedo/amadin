@@ -20,7 +20,8 @@ const appRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       manifest: application.manifest,
       defaults: {
         entities: application.entityDefaults
-      }
+      },
+      sidebar: application.sidebar
     };
   });
 
@@ -51,7 +52,8 @@ const appRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       form,
       defaults: {
         entities: application.entityDefaults
-      }
+      },
+      sidebar: application.sidebar
     };
   });
 };

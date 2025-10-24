@@ -48,6 +48,20 @@ export interface EntityFormDefaults {
   item: EntityFormReference;
 }
 
+export interface SidebarItem {
+  type: 'entity' | 'form' | 'overview' | 'url';
+  target: string;
+  label: string;
+  icon?: string;
+  permissions?: string[];
+}
+
+export interface SidebarGroup {
+  code: string;
+  title: string;
+  items: SidebarItem[];
+}
+
 export interface AppManifest {
   meta: {
     id: string;
@@ -57,6 +71,7 @@ export interface AppManifest {
   defaults: {
     entities: Record<string, EntityFormDefaults>;
   };
+  sidebar: SidebarGroup[];
 }
 
 export interface CatalogLink {
@@ -94,6 +109,7 @@ export interface AppOverviewEntry {
     catalogs: CatalogLink[];
     documents: DocumentLink[];
   };
+  sidebar?: SidebarGroup[];
 }
 
 export interface AppOverviewResponse {

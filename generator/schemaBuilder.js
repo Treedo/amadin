@@ -41,11 +41,24 @@ const formSchema = z.object({
     name: z.string().min(1),
     groups: z.array(formGroupSchema).min(1)
 });
+const sidebarItemSchema = z.object({
+    type: z.enum(['entity', 'form', 'overview', 'url']).default('entity'),
+    target: z.string().min(1),
+    label: z.string().min(1),
+    icon: z.string().optional(),
+    permissions: z.array(z.string().min(1)).optional()
+});
+const sidebarGroupSchema = z.object({
+    code: z.string().min(1),
+    title: z.string().min(1),
+    items: z.array(sidebarItemSchema).min(1)
+});
 const demoConfigSchema = z.object({
     appId: z.string().min(1),
     name: z.string().min(1),
     entities: z.array(entitySchema).min(1),
-    forms: z.array(formSchema).default([])
+    forms: z.array(formSchema).default([]),
+    sidebar: z.array(sidebarGroupSchema).default([])
 });
 const prismaTypeMap = {
     string: 'String',
@@ -132,7 +145,7 @@ export function buildUiArtifacts(config) {
         const defaults = resolveEntityDefaultsFor(entity, manifest, manifestIndex);
         entityDefaults[entity.code] = defaults;
     }
-    return { manifest, entityDefaults };
+    return { manifest, entityDefaults, sidebar: config.sidebar };
 }
 export function buildUiManifest(config) {
     return buildUiArtifacts(config).manifest;

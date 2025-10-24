@@ -65,7 +65,12 @@ const rootRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
     return {
       generatedAt: new Date().toISOString(),
-      applications: [overview]
+      applications: [
+        {
+          ...overview,
+          sidebar: application.sidebar
+        }
+      ]
     };
   };
 

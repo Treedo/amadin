@@ -8,18 +8,41 @@ generator client {
   output   = "./prisma-client"
 }
 
-model Company {
+model Goods {
   id        String   @id @default(uuid())
-  name String?
-  taxCode String?
+  name String
+  sku String?
+  unit String?
+  price Decimal?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-model Invoice {
+model Client {
   id        String   @id @default(uuid())
-  number String?
-  total Decimal?
+  name String
+  taxCode String?
+  phone String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model GoodsReceipt {
+  id        String   @id @default(uuid())
+  number String
+  date DateTime @default(now())
+  supplier String?
+  totalAmount Decimal?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model GoodsShipment {
+  id        String   @id @default(uuid())
+  number String
+  date DateTime @default(now())
+  customer String?
+  totalAmount Decimal?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

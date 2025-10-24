@@ -49,11 +49,26 @@ const formSchema = z.object({
   groups: z.array(formGroupSchema).min(1)
 });
 
+const sidebarItemSchema = z.object({
+  type: z.enum(['entity', 'form', 'overview', 'url']).default('entity'),
+  target: z.string().min(1),
+  label: z.string().min(1),
+  icon: z.string().optional(),
+  permissions: z.array(z.string().min(1)).optional()
+});
+
+const sidebarGroupSchema = z.object({
+  code: z.string().min(1),
+  title: z.string().min(1),
+  items: z.array(sidebarItemSchema).min(1)
+});
+
 const demoConfigSchema = z.object({
   appId: z.string().min(1),
   name: z.string().min(1),
   entities: z.array(entitySchema).min(1),
-  forms: z.array(formSchema).default([])
+  forms: z.array(formSchema).default([]),
+  sidebar: z.array(sidebarGroupSchema).default([])
 });
 
 export type DemoConfig = z.infer<typeof demoConfigSchema>;
@@ -62,6 +77,8 @@ export type DemoField = z.infer<typeof fieldSchema>;
 export type DemoForm = z.infer<typeof formSchema>;
 export type DemoFormElement = z.infer<typeof formElementSchema>;
 export type DemoFormField = z.infer<typeof formFieldSchema>;
+export type DemoSidebarGroup = z.infer<typeof sidebarGroupSchema>;
+export type DemoSidebarItem = z.infer<typeof sidebarItemSchema>;
 
 export interface UiFormUsage {
   entity: string;
@@ -113,6 +130,7 @@ export interface EntityFormDefaults {
 export interface UiArtifacts {
   manifest: UiManifest[];
   entityDefaults: Record<string, EntityFormDefaults>;
+  sidebar: DemoSidebarGroup[];
 }
 
 const prismaTypeMap: Record<DemoField['type'], string> = {
@@ -215,7 +233,7 @@ export function buildUiArtifacts(config: DemoConfig): UiArtifacts {
     entityDefaults[entity.code] = defaults;
   }
 
-  return { manifest, entityDefaults };
+  return { manifest, entityDefaults, sidebar: config.sidebar };
 }
 
 export function validateConfig(data: unknown): DemoConfig {

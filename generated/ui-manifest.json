@@ -12,58 +12,175 @@
         "items": [
           {
             "kind": "link",
-            "label": "Компанії",
-            "target": "entity:company",
+            "label": "Товари",
+            "target": "entity:goods",
             "targetType": "entity",
-            "description": "Перехід до довідника компаній"
+            "description": "Перехід до довідника товарів"
           },
           {
             "kind": "link",
-            "label": "Рахунки",
-            "target": "entity:invoice",
+            "label": "Клієнти",
+            "target": "entity:client",
             "targetType": "entity",
-            "description": "Перегляд рахунків"
+            "description": "Перегляд картки клієнтів"
           },
           {
             "kind": "link",
-            "label": "Форма рахунку",
-            "target": "form:invoiceForm",
+            "label": "Надходження товарів",
+            "target": "form:goodsReceiptForm",
             "targetType": "form",
-            "description": "Відкриття форми введення рахунку"
+            "description": "Створити документ надходження"
+          },
+          {
+            "kind": "link",
+            "label": "Видаткова накладна",
+            "target": "form:goodsShipmentForm",
+            "targetType": "form",
+            "description": "Створити документ відвантаження"
           }
         ]
       },
       {
         "code": "metrics",
-        "title": "Ключові показники",
+        "title": "Контроль залишків",
         "orientation": "vertical",
         "color": "accent",
         "autoGrow": true,
         "items": [
           {
             "kind": "field",
-            "entity": "company",
-            "field": "name",
-            "label": "Назва компанії",
+            "entity": "goods",
+            "field": "price",
+            "label": "Середня ціна",
             "widget": "input",
             "required": false
           },
           {
             "kind": "field",
-            "entity": "invoice",
-            "field": "total",
-            "label": "Сума рахунку",
+            "entity": "goodsReceipt",
+            "field": "totalAmount",
+            "label": "Сума надходжень",
+            "widget": "input",
+            "required": false
+          },
+          {
+            "kind": "field",
+            "entity": "goodsShipment",
+            "field": "totalAmount",
+            "label": "Сума відвантажень",
             "widget": "input",
             "required": false
           }
         ]
       }
     ],
-    "primaryEntity": "company"
+    "primaryEntity": "goods"
   },
   {
-    "code": "invoiceForm",
-    "name": "Invoice",
+    "code": "goodsForm",
+    "name": "Товар",
+    "groups": [
+      {
+        "code": "main",
+        "title": "Основні реквізити",
+        "orientation": "vertical",
+        "color": "neutral",
+        "autoGrow": true,
+        "items": [
+          {
+            "kind": "field",
+            "entity": "goods",
+            "field": "name",
+            "label": "Назва товару",
+            "widget": "input",
+            "required": true
+          },
+          {
+            "kind": "field",
+            "entity": "goods",
+            "field": "sku",
+            "label": "Артикул",
+            "widget": "input",
+            "required": false
+          },
+          {
+            "kind": "field",
+            "entity": "goods",
+            "field": "unit",
+            "label": "Одиниця",
+            "widget": "input",
+            "required": false
+          },
+          {
+            "kind": "field",
+            "entity": "goods",
+            "field": "price",
+            "label": "Ціна",
+            "widget": "input",
+            "required": false
+          }
+        ]
+      }
+    ],
+    "primaryEntity": "goods",
+    "usage": [
+      {
+        "entity": "goods",
+        "role": "item",
+        "source": "config"
+      }
+    ]
+  },
+  {
+    "code": "clientForm",
+    "name": "Клієнт",
+    "groups": [
+      {
+        "code": "main",
+        "title": "Контактні дані",
+        "orientation": "vertical",
+        "color": "neutral",
+        "autoGrow": true,
+        "items": [
+          {
+            "kind": "field",
+            "entity": "client",
+            "field": "name",
+            "label": "Назва",
+            "widget": "input",
+            "required": true
+          },
+          {
+            "kind": "field",
+            "entity": "client",
+            "field": "taxCode",
+            "label": "Код ЄДРПОУ/ІПН",
+            "widget": "input",
+            "required": false
+          },
+          {
+            "kind": "field",
+            "entity": "client",
+            "field": "phone",
+            "label": "Телефон",
+            "widget": "input",
+            "required": false
+          }
+        ]
+      }
+    ],
+    "primaryEntity": "client",
+    "usage": [
+      {
+        "entity": "client",
+        "role": "item",
+        "source": "config"
+      }
+    ]
+  },
+  {
+    "code": "goodsReceiptForm",
+    "name": "Надходження товарів",
     "groups": [
       {
         "code": "main",
@@ -74,77 +191,109 @@
         "items": [
           {
             "kind": "field",
-            "entity": "invoice",
+            "entity": "goodsReceipt",
             "field": "number",
-            "label": "Number",
+            "label": "Номер",
+            "widget": "input",
+            "required": true
+          },
+          {
+            "kind": "field",
+            "entity": "goodsReceipt",
+            "field": "date",
+            "label": "Дата",
+            "widget": "datepicker",
+            "required": true
+          },
+          {
+            "kind": "field",
+            "entity": "goodsReceipt",
+            "field": "supplier",
+            "label": "Постачальник",
             "widget": "input",
             "required": false
           },
           {
             "kind": "field",
-            "entity": "invoice",
-            "field": "total",
-            "label": "Total",
+            "entity": "goodsReceipt",
+            "field": "totalAmount",
+            "label": "Сума",
             "widget": "input",
             "required": false
           }
         ]
       }
     ],
-    "primaryEntity": "invoice",
+    "primaryEntity": "goodsReceipt",
     "usage": [
       {
-        "entity": "invoice",
+        "entity": "goodsReceipt",
         "role": "item",
         "source": "config"
       }
     ]
   },
   {
-    "code": "companyForm",
-    "name": "Company",
+    "code": "goodsShipmentForm",
+    "name": "Видаткова накладна",
     "groups": [
       {
         "code": "main",
-        "title": "Реквізити",
+        "title": "Основні дані",
         "orientation": "vertical",
         "color": "neutral",
         "autoGrow": true,
         "items": [
           {
             "kind": "field",
-            "entity": "company",
-            "field": "name",
-            "label": "Name",
+            "entity": "goodsShipment",
+            "field": "number",
+            "label": "Номер",
+            "widget": "input",
+            "required": true
+          },
+          {
+            "kind": "field",
+            "entity": "goodsShipment",
+            "field": "date",
+            "label": "Дата",
+            "widget": "datepicker",
+            "required": true
+          },
+          {
+            "kind": "field",
+            "entity": "goodsShipment",
+            "field": "customer",
+            "label": "Покупець",
             "widget": "input",
             "required": false
           },
           {
             "kind": "field",
-            "entity": "company",
-            "field": "taxCode",
-            "label": "Tax Code",
+            "entity": "goodsShipment",
+            "field": "totalAmount",
+            "label": "Сума",
             "widget": "input",
             "required": false
           }
         ]
       }
     ],
-    "primaryEntity": "company",
+    "primaryEntity": "goodsShipment",
     "usage": [
       {
-        "entity": "company",
+        "entity": "goodsShipment",
         "role": "item",
         "source": "config"
       }
     ]
   },
   {
-    "code": "companyList",
-    "name": "Список Company",
+    "code": "goodsList",
+    "name": "Список Товари",
     "groups": [
       {
-        "code": "company-list-main",
+        "code": "goods-list-main",
         "title": "Основні реквізити",
         "orientation": "vertical",
         "color": "neutral",
@@ -152,38 +301,54 @@
         "items": [
           {
             "kind": "field",
-            "entity": "company",
+            "entity": "goods",
             "field": "name",
-            "label": "Name",
+            "label": "Назва",
+            "widget": "input",
+            "required": true
+          },
+          {
+            "kind": "field",
+            "entity": "goods",
+            "field": "sku",
+            "label": "Артикул",
             "widget": "input",
             "required": false
           },
           {
             "kind": "field",
-            "entity": "company",
-            "field": "taxCode",
-            "label": "Tax Code",
+            "entity": "goods",
+            "field": "unit",
+            "label": "Одиниця виміру",
+            "widget": "input",
+            "required": false
+          },
+          {
+            "kind": "field",
+            "entity": "goods",
+            "field": "price",
+            "label": "Ціна",
             "widget": "input",
             "required": false
           }
         ]
       }
     ],
-    "primaryEntity": "company",
+    "primaryEntity": "goods",
     "usage": [
       {
-        "entity": "company",
+        "entity": "goods",
         "role": "list",
         "source": "generated"
       }
     ]
   },
   {
-    "code": "invoiceList",
-    "name": "Список Invoice",
+    "code": "clientList",
+    "name": "Список Клієнти",
     "groups": [
       {
-        "code": "invoice-list-main",
+        "code": "client-list-main",
         "title": "Основні реквізити",
         "orientation": "vertical",
         "color": "neutral",
@@ -191,27 +356,145 @@
         "items": [
           {
             "kind": "field",
-            "entity": "invoice",
-            "field": "number",
-            "label": "Number",
+            "entity": "client",
+            "field": "name",
+            "label": "Назва",
+            "widget": "input",
+            "required": true
+          },
+          {
+            "kind": "field",
+            "entity": "client",
+            "field": "taxCode",
+            "label": "Код ЄДРПОУ/ІПН",
             "widget": "input",
             "required": false
           },
           {
             "kind": "field",
-            "entity": "invoice",
-            "field": "total",
-            "label": "Total",
+            "entity": "client",
+            "field": "phone",
+            "label": "Телефон",
             "widget": "input",
             "required": false
           }
         ]
       }
     ],
-    "primaryEntity": "invoice",
+    "primaryEntity": "client",
     "usage": [
       {
-        "entity": "invoice",
+        "entity": "client",
+        "role": "list",
+        "source": "generated"
+      }
+    ]
+  },
+  {
+    "code": "goodsReceiptList",
+    "name": "Список Надходження товарів",
+    "groups": [
+      {
+        "code": "goodsReceipt-list-main",
+        "title": "Основні реквізити",
+        "orientation": "vertical",
+        "color": "neutral",
+        "autoGrow": true,
+        "items": [
+          {
+            "kind": "field",
+            "entity": "goodsReceipt",
+            "field": "number",
+            "label": "Номер",
+            "widget": "input",
+            "required": true
+          },
+          {
+            "kind": "field",
+            "entity": "goodsReceipt",
+            "field": "date",
+            "label": "Дата",
+            "widget": "datepicker",
+            "required": true
+          },
+          {
+            "kind": "field",
+            "entity": "goodsReceipt",
+            "field": "supplier",
+            "label": "Постачальник",
+            "widget": "input",
+            "required": false
+          },
+          {
+            "kind": "field",
+            "entity": "goodsReceipt",
+            "field": "totalAmount",
+            "label": "Сума",
+            "widget": "input",
+            "required": false
+          }
+        ]
+      }
+    ],
+    "primaryEntity": "goodsReceipt",
+    "usage": [
+      {
+        "entity": "goodsReceipt",
+        "role": "list",
+        "source": "generated"
+      }
+    ]
+  },
+  {
+    "code": "goodsShipmentList",
+    "name": "Список Видаткова накладна",
+    "groups": [
+      {
+        "code": "goodsShipment-list-main",
+        "title": "Основні реквізити",
+        "orientation": "vertical",
+        "color": "neutral",
+        "autoGrow": true,
+        "items": [
+          {
+            "kind": "field",
+            "entity": "goodsShipment",
+            "field": "number",
+            "label": "Номер",
+            "widget": "input",
+            "required": true
+          },
+          {
+            "kind": "field",
+            "entity": "goodsShipment",
+            "field": "date",
+            "label": "Дата",
+            "widget": "datepicker",
+            "required": true
+          },
+          {
+            "kind": "field",
+            "entity": "goodsShipment",
+            "field": "customer",
+            "label": "Покупець",
+            "widget": "input",
+            "required": false
+          },
+          {
+            "kind": "field",
+            "entity": "goodsShipment",
+            "field": "totalAmount",
+            "label": "Сума",
+            "widget": "input",
+            "required": false
+          }
+        ]
+      }
+    ],
+    "primaryEntity": "goodsShipment",
+    "usage": [
+      {
+        "entity": "goodsShipment",
         "role": "list",
         "source": "generated"
       }

@@ -4,6 +4,7 @@ import path from 'path';
 import {
   buildUiArtifacts,
   DemoConfig,
+  DemoSidebarGroup,
   EntityFormDefaults,
   UiManifest,
   validateConfig
@@ -14,6 +15,7 @@ type RegisteredApp = {
   config: DemoConfig;
   manifest: UiManifest[];
   entityDefaults: Record<string, EntityFormDefaults>;
+  sidebar: DemoSidebarGroup[];
 };
 
 const registry = new Map<string, RegisteredApp>();
@@ -29,7 +31,8 @@ export async function loadRegistry(configPath = path.resolve('examples/demo-conf
   registry.set(config.appId, {
     config,
     manifest: artifacts.manifest,
-    entityDefaults: artifacts.entityDefaults
+    entityDefaults: artifacts.entityDefaults,
+    sidebar: artifacts.sidebar
   });
   defaultAppId = config.appId;
 }
@@ -56,4 +59,12 @@ export function getEntityDefaults(appId: string): Record<string, EntityFormDefau
 
 export function getDefaultEntityDefaults(): Record<string, EntityFormDefaults> | undefined {
   return defaultAppId ? registry.get(defaultAppId)?.entityDefaults : undefined;
+}
+
+export function getSidebar(appId: string): DemoSidebarGroup[] | undefined {
+  return registry.get(appId)?.sidebar;
+}
+
+export function getDefaultSidebar(): DemoSidebarGroup[] | undefined {
+  return defaultAppId ? registry.get(defaultAppId)?.sidebar : undefined;
 }

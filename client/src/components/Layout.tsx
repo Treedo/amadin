@@ -1,28 +1,47 @@
 import { MouseEvent } from 'react';
 import { Outlet } from 'react-router-dom';
 
+import type { SidebarGroup, SidebarItem } from '../api/index.js';
 import { useAmadin } from '../context/AmadinContext.js';
 import { useWindowManager } from '../context/WindowManagerContext.js';
 export function Layout() {
   const { app, overview } = useAmadin();
   const { windows, activeWindow, activateWindow, closeWindow, openView } = useWindowManager();
 
-  const handleOpenEntity = (event: MouseEvent, entityCode: string, label: string) => {
+  const handleSidebarItem = (event: MouseEvent, item: SidebarItem) => {
     event.preventDefault();
     const newWindow = isAdditionalWindow(event);
-    const defaultListForm = app?.defaults.entities[entityCode]?.list.formCode;
-    if (defaultListForm) {
-      openView({ kind: 'form', formCode: defaultListForm }, { newWindow, title: label });
+
+    if (item.type === 'entity') {
+      const defaultListForm = app?.defaults.entities[item.target]?.list.formCode;
+      if (defaultListForm) {
+        openView({ kind: 'form', formCode: defaultListForm }, { newWindow, title: item.label });
+        return;
+      }
+      openView({ kind: 'entity', entityCode: item.target }, { newWindow, title: item.label });
       return;
     }
-    openView({ kind: 'entity', entityCode }, { newWindow, title: label });
+
+    if (item.type === 'form') {
+      openView({ kind: 'form', formCode: item.target }, { newWindow, title: item.label });
+      return;
+    }
+
+    if (item.type === 'overview') {
+      openView({ kind: 'overview' }, { newWindow, title: item.label });
+      return;
+    }
+
+    if (item.type === 'url') {
+      if (newWindow) {
+        window.open(item.target, '_blank', 'noopener');
+      } else {
+        window.location.href = item.target;
+      }
+    }
   };
 
-  const handleOpenForm = (event: MouseEvent, formCode: string, label: string) => {
-    event.preventDefault();
-    const newWindow = isAdditionalWindow(event);
-    openView({ kind: 'form', formCode }, { newWindow, title: label });
-  };
+  const sidebarGroups: SidebarGroup[] = app?.sidebar?.length ? app.sidebar : [];
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', minHeight: '100vh', fontFamily: 'sans-serif' }}>
@@ -32,67 +51,56 @@ export function Layout() {
           <p style={{ margin: 0, color: '#6b7280' }}>{app?.meta.name ?? 'Застосунок завантажується'}</p>
         </div>
 
-        {overview ? (
+        {sidebarGroups.length > 0 ? (
           <div style={{ fontSize: '0.9rem', color: '#555', display: 'grid', gap: '0.75rem' }}>
-            <div>
-              <strong>Каталоги</strong>
-              <ul style={{ paddingLeft: '0', margin: '0.5rem 0 0 0', listStyle: 'none', display: 'grid', gap: '0.25rem' }}>
-                {overview.links.catalogs.map((catalog) => (
-                  <li key={catalog.code}>
-                    <button
-                      type="button"
-                      onClick={(event) => handleOpenEntity(event, catalog.code, catalog.name)}
-                      onAuxClick={(event) => handleOpenEntity(event, catalog.code, catalog.name)}
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        width: '100%',
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '0.5rem',
-                        padding: '0.5rem 0.75rem',
-                        background: '#fff',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <span>{catalog.name}</span>
-                      <span style={{ fontSize: '0.8rem', color: '#999' }}>↗</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <strong>Документи</strong>
-              <ul style={{ paddingLeft: '0', margin: '0.5rem 0 0 0', listStyle: 'none', display: 'grid', gap: '0.25rem' }}>
-                {overview.links.documents.map((document) => (
-                  <li key={document.code}>
-                    <button
-                      type="button"
-                      onClick={(event) => handleOpenForm(event, document.code, document.name)}
-                      onAuxClick={(event) => handleOpenForm(event, document.code, document.name)}
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        width: '100%',
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '0.5rem',
-                        padding: '0.5rem 0.75rem',
-                        background: '#fff',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <span>{document.name}</span>
-                      <span style={{ fontSize: '0.8rem', color: '#999' }}>↗</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {sidebarGroups.map((group) => (
+              <div key={group.code}>
+                <strong>{group.title}</strong>
+                <ul
+                  style={{
+                    paddingLeft: '0',
+                    margin: '0.5rem 0 0 0',
+                    listStyle: 'none',
+                    display: 'grid',
+                    gap: '0.25rem'
+                  }}
+                >
+                  {group.items.map((item) => (
+                    <li key={`${group.code}-${item.type}-${item.target}`}>
+                      <button
+                        type="button"
+                        onClick={(event) => handleSidebarItem(event, item)}
+                        onAuxClick={(event) => handleSidebarItem(event, item)}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          width: '100%',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '0.5rem',
+                          padding: '0.5rem 0.75rem',
+                          background: '#fff',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <span>
+                          {item.icon ? <span style={{ marginRight: '0.5rem' }}>{item.icon}</span> : null}
+                          {item.label}
+                        </span>
+                        <span style={{ fontSize: '0.8rem', color: '#999' }}>↗</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        ) : overview ? (
+          <div style={{ fontSize: '0.9rem', color: '#555' }}>
+            <p style={{ margin: 0, color: '#9ca3af' }}>Меню ще конфігурується…</p>
           </div>
         ) : (
-          <p style={{ margin: 0, color: '#9ca3af' }}>Каталоги та документи завантажуються…</p>
+          <p style={{ margin: 0, color: '#9ca3af' }}>Дані завантажуються…</p>
         )}
       </aside>
       <main style={{ padding: '2rem', display: 'grid', gap: '1rem' }}>
