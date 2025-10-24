@@ -98,7 +98,11 @@ export function Layout() {
               display: 'flex',
               gap: '0.5rem',
               borderBottom: '1px solid #eee',
-              paddingBottom: '0.5rem'
+              paddingBottom: '0.5rem',
+              height: '3rem',
+              alignItems: 'center',
+              overflowX: 'auto',
+              overflowY: 'hidden'
             }}
           >
             {windows.map((window) => (
