@@ -10,6 +10,11 @@ export function Layout() {
   const handleOpenEntity = (event: MouseEvent, entityCode: string, label: string) => {
     event.preventDefault();
     const newWindow = isAdditionalWindow(event);
+    const defaultListForm = app?.defaults.entities[entityCode]?.list.formCode;
+    if (defaultListForm) {
+      openView({ kind: 'form', formCode: defaultListForm }, { newWindow, title: label });
+      return;
+    }
     openView({ kind: 'entity', entityCode }, { newWindow, title: label });
   };
 

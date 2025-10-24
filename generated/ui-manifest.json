@@ -91,7 +91,14 @@
         ]
       }
     ],
-    "primaryEntity": "invoice"
+    "primaryEntity": "invoice",
+    "usage": [
+      {
+        "entity": "invoice",
+        "role": "item",
+        "source": "config"
+      }
+    ]
   },
   {
     "code": "companyForm",
@@ -123,6 +130,91 @@
         ]
       }
     ],
-    "primaryEntity": "company"
+    "primaryEntity": "company",
+    "usage": [
+      {
+        "entity": "company",
+        "role": "item",
+        "source": "config"
+      }
+    ]
+  },
+  {
+    "code": "companyList",
+    "name": "Список Company",
+    "groups": [
+      {
+        "code": "company-list-main",
+        "title": "Основні реквізити",
+        "orientation": "vertical",
+        "color": "neutral",
+        "autoGrow": true,
+        "items": [
+          {
+            "kind": "field",
+            "entity": "company",
+            "field": "name",
+            "label": "Name",
+            "widget": "input",
+            "required": false
+          },
+          {
+            "kind": "field",
+            "entity": "company",
+            "field": "taxCode",
+            "label": "Tax Code",
+            "widget": "input",
+            "required": false
+          }
+        ]
+      }
+    ],
+    "primaryEntity": "company",
+    "usage": [
+      {
+        "entity": "company",
+        "role": "list",
+        "source": "generated"
+      }
+    ]
+  },
+  {
+    "code": "invoiceList",
+    "name": "Список Invoice",
+    "groups": [
+      {
+        "code": "invoice-list-main",
+        "title": "Основні реквізити",
+        "orientation": "vertical",
+        "color": "neutral",
+        "autoGrow": true,
+        "items": [
+          {
+            "kind": "field",
+            "entity": "invoice",
+            "field": "number",
+            "label": "Number",
+            "widget": "input",
+            "required": false
+          },
+          {
+            "kind": "field",
+            "entity": "invoice",
+            "field": "total",
+            "label": "Total",
+            "widget": "input",
+            "required": false
+          }
+        ]
+      }
+    ],
+    "primaryEntity": "invoice",
+    "usage": [
+      {
+        "entity": "invoice",
+        "role": "list",
+        "source": "generated"
+      }
+    ]
   }
 ]

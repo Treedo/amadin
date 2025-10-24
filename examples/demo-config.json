@@ -5,6 +5,8 @@
     {
       "code": "company",
       "name": "Company",
+      "kind": "catalog",
+      "defaultItemForm": "companyForm",
       "fields": [
         { "code": "name", "name": "Name", "type": "string" },
         { "code": "taxCode", "name": "Tax Code", "type": "string" }
@@ -13,6 +15,9 @@
     {
       "code": "invoice",
       "name": "Invoice",
+      "kind": "document",
+      "defaultItemForm": "invoiceForm",
+      "defaultListForm": "invoiceList",
       "fields": [
         { "code": "number", "name": "Number", "type": "string" },
         { "code": "total", "name": "Total", "type": "decimal" }

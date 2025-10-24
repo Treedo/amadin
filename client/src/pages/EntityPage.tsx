@@ -7,7 +7,7 @@ import { useWindowManager } from '../context/WindowManagerContext.js';
 
 export function EntityPage() {
   const { entityCode } = useParams();
-  const { loadApp } = useAmadin();
+  const { app, loadApp } = useAmadin();
   const { activeWindow, setWindowTitle } = useWindowManager();
 
   useEffect(() => {
@@ -22,6 +22,16 @@ export function EntityPage() {
 
   if (!entityCode) {
     return <Navigate to="/" replace />;
+  }
+
+  if (!app) {
+    return <p>Завантажуємо конфігурацію застосунку…</p>;
+  }
+
+  const defaultListForm = app.defaults.entities[entityCode]?.list.formCode;
+
+  if (defaultListForm) {
+    return <Navigate to={`/forms/${defaultListForm}`} replace />;
   }
 
   return <TableView entityCode={entityCode} />;

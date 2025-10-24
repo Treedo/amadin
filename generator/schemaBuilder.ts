@@ -10,6 +10,9 @@ const fieldSchema = z.object({
 const entitySchema = z.object({
   code: z.string().min(1),
   name: z.string().min(1),
+  kind: z.enum(['catalog', 'document', 'register']).default('catalog'),
+  defaultListForm: z.string().min(1).optional(),
+  defaultItemForm: z.string().min(1).optional(),
   fields: z.array(fieldSchema).min(1)
 });
 
@@ -60,6 +63,12 @@ export type DemoForm = z.infer<typeof formSchema>;
 export type DemoFormElement = z.infer<typeof formElementSchema>;
 export type DemoFormField = z.infer<typeof formFieldSchema>;
 
+export interface UiFormUsage {
+  entity: string;
+  role: 'list' | 'item';
+  source: 'config' | 'generated';
+}
+
 export interface UiManifest {
   code: string;
   name: string;
@@ -88,6 +97,22 @@ export interface UiManifest {
     >;
   }>;
   primaryEntity?: string;
+  usage?: UiFormUsage[];
+}
+
+export interface EntityFormReference {
+  formCode: string;
+  generated: boolean;
+}
+
+export interface EntityFormDefaults {
+  list: EntityFormReference;
+  item: EntityFormReference;
+}
+
+export interface UiArtifacts {
+  manifest: UiManifest[];
+  entityDefaults: Record<string, EntityFormDefaults>;
 }
 
 const prismaTypeMap: Record<DemoField['type'], string> = {
@@ -104,6 +129,15 @@ const defaultScalarAttributes: Partial<Record<DemoField['type'], string>> = {
   date: '@default(now())'
 };
 
+const defaultWidgetByFieldType: Record<DemoField['type'], DemoFormField['widget']> = {
+  string: 'input',
+  number: 'input',
+  decimal: 'input',
+  date: 'datepicker',
+  boolean: 'switch',
+  grid: 'input'
+};
+
 export function buildPrismaSchema(config: DemoConfig): string {
   const datasourceBlock = `datasource db {\n  provider = \"postgresql\"\n  url      = env(\"APP_DATABASE_URL\")\n}`;
   const generatorBlock = `generator client {\n  provider = \"prisma-client-js\"\n  output   = \"./prisma-client\"\n}`;
@@ -111,13 +145,15 @@ export function buildPrismaSchema(config: DemoConfig): string {
   return [datasourceBlock, generatorBlock, models].filter(Boolean).join('\n\n') + '\n';
 }
 
-export function buildUiManifest(config: DemoConfig): UiManifest[] {
+export function buildUiArtifacts(config: DemoConfig): UiArtifacts {
   const entityMap = new Map<string, DemoEntity>();
   for (const entity of config.entities) {
     entityMap.set(entity.code, entity);
   }
+  const manifest: UiManifest[] = [];
+  const manifestIndex = new Map<string, UiManifest>();
 
-  return config.forms.map((form: DemoForm) => {
+  const mapForm = (form: DemoForm): UiManifest => {
     const groups = form.groups.map((group) => {
       const mappedItems = group.items.map((item: DemoFormElement) => {
         if (item.kind === 'field') {
@@ -164,7 +200,22 @@ export function buildUiManifest(config: DemoConfig): UiManifest[] {
       groups,
       primaryEntity: primaryField?.entity
     };
-  });
+  };
+
+  for (const form of config.forms) {
+    const mapped = mapForm(form);
+    manifest.push(mapped);
+    manifestIndex.set(mapped.code, mapped);
+  }
+
+  const entityDefaults: Record<string, EntityFormDefaults> = {};
+
+  for (const entity of config.entities) {
+    const defaults = resolveEntityDefaultsFor(entity, manifest, manifestIndex);
+    entityDefaults[entity.code] = defaults;
+  }
+
+  return { manifest, entityDefaults };
 }
 
 export function validateConfig(data: unknown): DemoConfig {
@@ -193,4 +244,102 @@ function pascalCase(value: string): string {
 function camelCase(value: string): string {
   const pascal = pascalCase(value);
   return pascal.slice(0, 1).toLowerCase() + pascal.slice(1);
+}
+
+function resolveEntityDefaultsFor(
+  entity: DemoEntity,
+  manifest: UiManifest[],
+  manifestIndex: Map<string, UiManifest>
+): EntityFormDefaults {
+  const list = ensureFormForEntity(entity, 'list', manifest, manifestIndex);
+  const item = ensureFormForEntity(entity, 'item', manifest, manifestIndex);
+
+  return { list, item };
+}
+
+function ensureFormForEntity(
+  entity: DemoEntity,
+  role: 'list' | 'item',
+  manifest: UiManifest[],
+  manifestIndex: Map<string, UiManifest>
+): EntityFormReference {
+  const requestedCode = role === 'list' ? entity.defaultListForm : entity.defaultItemForm;
+  const fallbackCode = requestedCode ?? defaultFormCode(entity.code, role);
+  const resolvedCode = fallbackCode;
+  const existing = manifestIndex.get(resolvedCode);
+  if (existing) {
+    applyUsage(existing, entity.code, role, false);
+    if (!existing.primaryEntity) {
+      existing.primaryEntity = entity.code;
+    }
+    return { formCode: existing.code, generated: false };
+  }
+
+  const generated = createDefaultForm(entity, resolvedCode, role);
+  manifest.push(generated);
+  manifestIndex.set(generated.code, generated);
+  return { formCode: generated.code, generated: true };
+}
+
+function applyUsage(form: UiManifest, entityCode: string, role: 'list' | 'item', generated: boolean) {
+  const usageEntry: UiFormUsage = {
+    entity: entityCode,
+    role,
+    source: generated ? 'generated' : 'config'
+  };
+  const existingUsage = form.usage ?? [];
+  const alreadyPresent = existingUsage.some(
+    (usage) => usage.entity === usageEntry.entity && usage.role === usageEntry.role && usage.source === usageEntry.source
+  );
+  if (!alreadyPresent) {
+    form.usage = [...existingUsage, usageEntry];
+  }
+}
+
+function createDefaultForm(entity: DemoEntity, code: string, role: 'list' | 'item'): UiManifest {
+  const title = role === 'list' ? `Список ${entity.name}` : `Елемент ${entity.name}`;
+  const items = entity.fields.map((field) => ({
+    kind: 'field' as const,
+    entity: entity.code,
+    field: field.code,
+    label: field.name,
+    widget: defaultWidgetByFieldType[field.type] ?? 'input',
+    required: Boolean(field.required)
+  }));
+
+  const form: UiManifest = {
+    code,
+    name: title,
+    groups: [
+      {
+        code: `${entity.code}-${role}-main`,
+        title: 'Основні реквізити',
+        orientation: 'vertical',
+        color: 'neutral',
+        autoGrow: true,
+        items
+      }
+    ],
+    primaryEntity: entity.code,
+    usage: [
+      {
+        entity: entity.code,
+        role,
+        source: 'generated'
+      }
+    ]
+  };
+
+  return form;
+}
+
+function defaultFormCode(entityCode: string, role: 'list' | 'item'): string {
+  if (role === 'list') {
+    return `${entityCode}List`;
+  }
+  return `${entityCode}Form`;
+}
+
+export function buildUiManifest(config: DemoConfig): UiManifest[] {
+  return buildUiArtifacts(config).manifest;
 }

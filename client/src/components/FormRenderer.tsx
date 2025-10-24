@@ -26,7 +26,7 @@ export function FormRenderer({ app, formCode }: FormRendererProps) {
       setRows([]);
       return;
     }
-  fetchEntityRows(entityCode)
+    fetchEntityRows(entityCode)
       .then(setRows)
       .catch((error) => {
         console.error('Failed to load entity rows', error);
@@ -42,6 +42,11 @@ export function FormRenderer({ app, formCode }: FormRendererProps) {
     const newWindow = isAdditionalWindow(event);
     if (item.targetType === 'entity') {
       const [, entityCode = item.target] = item.target.split(':');
+      const defaultListForm = app.defaults.entities[entityCode]?.list.formCode;
+      if (defaultListForm) {
+        openView({ kind: 'form', formCode: defaultListForm }, { newWindow, title: item.label });
+        return;
+      }
       openView({ kind: 'entity', entityCode }, { newWindow, title: item.label });
       return;
     }

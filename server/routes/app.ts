@@ -17,7 +17,10 @@ const appRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
         id: appId,
         name: application.config.name
       },
-      manifest: application.manifest
+      manifest: application.manifest,
+      defaults: {
+        entities: application.entityDefaults
+      }
     };
   });
 
@@ -45,7 +48,10 @@ const appRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
         id: appId,
         name: application.config.name
       },
-      form
+      form,
+      defaults: {
+        entities: application.entityDefaults
+      }
     };
   });
 };

@@ -14,35 +14,44 @@ const rootRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       };
     }
 
+  const defaults = application.entityDefaults ?? {};
+
     const catalogs = application.config.entities.map((entity) => ({
       code: entity.code,
       name: entity.name,
+      kind: entity.kind,
       href: `/api/entities/${entity.code}`,
       fields: entity.fields.map((field) => ({
         code: field.code,
         name: field.name,
         type: field.type,
         required: Boolean(field.required)
-      }))
+      })),
+      defaults: defaults[entity.code]
+        ? {
+            listForm: defaults[entity.code].list.formCode,
+            itemForm: defaults[entity.code].item.formCode,
+            generatedList: defaults[entity.code].list.generated,
+            generatedItem: defaults[entity.code].item.generated
+          }
+        : undefined
     }));
 
-    const documents = application.config.forms.map((form) => {
-      const manifestEntry = application.manifest.find((item) => item.code === form.code);
-      return {
-        code: form.code,
-        name: form.name,
-        href: `/forms/${form.code}`,
-        groups: manifestEntry?.groups ?? [],
-        primaryEntity: manifestEntry?.primaryEntity
-      };
-    });
+    const documents = application.manifest.map((form) => ({
+      code: form.code,
+      name: form.name,
+      href: `/forms/${form.code}`,
+      groups: form.groups,
+      primaryEntity: form.primaryEntity,
+      usage: form.usage ?? []
+    }));
 
     const overview = {
       id: appId,
       name: application.config.name,
       summary: {
-        catalogCount: catalogs.length,
-        documentCount: documents.length
+  catalogCount: catalogs.length,
+  documentCount: documents.length
       },
       links: {
         manifest: '/',

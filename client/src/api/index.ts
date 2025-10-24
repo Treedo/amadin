@@ -24,11 +24,28 @@ export interface UiFormGroup {
   items: UiFormGroupItem[];
 }
 
+export interface UiFormUsage {
+  entity: string;
+  role: 'list' | 'item';
+  source: 'config' | 'generated';
+}
+
 export interface UiForm {
   code: string;
   name: string;
   groups: UiFormGroup[];
   primaryEntity?: string;
+  usage?: UiFormUsage[];
+}
+
+export interface EntityFormReference {
+  formCode: string;
+  generated: boolean;
+}
+
+export interface EntityFormDefaults {
+  list: EntityFormReference;
+  item: EntityFormReference;
 }
 
 export interface AppManifest {
@@ -37,13 +54,23 @@ export interface AppManifest {
     name: string;
   };
   manifest: UiForm[];
+  defaults: {
+    entities: Record<string, EntityFormDefaults>;
+  };
 }
 
 export interface CatalogLink {
   code: string;
   name: string;
+  kind: 'catalog' | 'document' | 'register';
   href: string;
   fields: Array<{ code: string; name: string; type: string; required: boolean }>;
+  defaults?: {
+    listForm: string;
+    itemForm: string;
+    generatedList: boolean;
+    generatedItem: boolean;
+  };
 }
 
 export interface DocumentLink {
@@ -51,6 +78,8 @@ export interface DocumentLink {
   name: string;
   href: string;
   groups: UiFormGroup[];
+  primaryEntity?: string;
+  usage: UiFormUsage[];
 }
 
 export interface AppOverviewEntry {
