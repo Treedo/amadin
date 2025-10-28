@@ -1,15 +1,17 @@
-import { MouseEvent, useMemo } from 'react';
+import { MouseEvent, useEffect, useMemo, useState } from 'react';
 
 import type { AppManifest, UiForm, UiFormGroupItem } from '../api/index.js';
+import { fetchEntityRecord } from '../api/index.js';
 import { useWindowManager } from '../context/WindowManagerContext.js';
 import { TableView } from './TableView.js';
 
 interface FormRendererProps {
   app: AppManifest;
   formCode?: string;
+  recordId?: string;
 }
 
-export function FormRenderer({ app, formCode }: FormRendererProps) {
+export function FormRenderer({ app, formCode, recordId }: FormRendererProps) {
   const { openView } = useWindowManager();
   const activeForm = useMemo<UiForm | undefined>(() => {
     if (formCode) {
@@ -25,6 +27,51 @@ export function FormRenderer({ app, formCode }: FormRendererProps) {
 
   const primaryEntity = activeForm.primaryEntity ?? '';
   const isListForm = Boolean(activeForm.usage?.some((usage) => usage.role === 'list'));
+  const [record, setRecord] = useState<Record<string, unknown> | null>(null);
+  const [recordLoading, setRecordLoading] = useState(false);
+  const [recordError, setRecordError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isListForm) {
+      setRecord(null);
+      setRecordError(null);
+      setRecordLoading(false);
+      return;
+    }
+
+    if (!primaryEntity || !recordId) {
+      setRecord(null);
+      setRecordError(null);
+      setRecordLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setRecordLoading(true);
+    setRecordError(null);
+    fetchEntityRecord(primaryEntity, recordId)
+      .then((fetched) => {
+        if (!cancelled) {
+          setRecord(fetched);
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          console.error('Failed to load record', error);
+          setRecord(null);
+          setRecordError('Не вдалося завантажити запис.');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setRecordLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isListForm, primaryEntity, recordId]);
 
   const handleLinkClick = (event: MouseEvent, item: Extract<UiFormGroupItem, { kind: 'link' }>) => {
     event.preventDefault();
@@ -66,6 +113,11 @@ export function FormRenderer({ app, formCode }: FormRendererProps) {
         )
       ) : (
         <div style={{ display: 'grid', gap: '1.5rem' }}>
+          {recordId ? (
+            <div style={{ fontSize: '0.9rem', color: '#6b7280' }}>ID запису: {recordId}</div>
+          ) : null}
+          {recordLoading && <div>Завантаження даних…</div>}
+          {recordError && <div style={{ color: '#c0392b' }}>{recordError}</div>}
           {activeForm.groups.map((group) => (
             <section
               key={group.code}
@@ -90,6 +142,7 @@ export function FormRenderer({ app, formCode }: FormRendererProps) {
               >
                 {group.items.map((item: UiFormGroupItem, index: number) => {
                   if (item.kind === 'field') {
+                    const value = record ? record[item.field] : undefined;
                     return (
                       <label
                         key={`${group.code}-${item.field}-${index}`}
@@ -99,7 +152,22 @@ export function FormRenderer({ app, formCode }: FormRendererProps) {
                           {item.label}
                           {item.required ? ' *' : ''}
                         </span>
-                        <input type="text" placeholder={item.field} />
+                        {item.widget === 'textarea' ? (
+                          <textarea
+                            placeholder={item.field}
+                            value={formatFieldValue(value)}
+                            readOnly
+                            style={{ background: '#f9fafb', minHeight: '4rem', resize: 'vertical' }}
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            placeholder={item.field}
+                            value={formatFieldValue(value)}
+                            readOnly
+                            style={{ background: '#f9fafb' }}
+                          />
+                        )}
                       </label>
                     );
                   }
@@ -150,4 +218,21 @@ function resolveLinkHref(item: Extract<UiFormGroupItem, { kind: 'link' }>): stri
 
 function isAdditionalWindow(event: MouseEvent): boolean {
   return event.metaKey || event.ctrlKey || event.shiftKey || event.button === 1;
+}
+
+function formatFieldValue(value: unknown): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return '[Object]';
+    }
+  }
+  return String(value);
 }

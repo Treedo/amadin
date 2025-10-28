@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetchEntityRows } from '../api/index.js';
+import { useAmadin } from '../context/AmadinContext.js';
+import { useWindowManager } from '../context/WindowManagerContext.js';
 
 interface TableViewProps {
   entityCode: string;
@@ -9,6 +11,8 @@ export function TableView({ entityCode }: TableViewProps) {
   const [rows, setRows] = useState<Record<string, unknown>[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { app } = useAmadin();
+  const { openView } = useWindowManager();
 
   useEffect(() => {
     if (!entityCode) {
@@ -67,6 +71,27 @@ export function TableView({ entityCode }: TableViewProps) {
     return ordered;
   }, [rows]);
 
+  const itemFormCode = app?.defaults.entities[entityCode]?.item.formCode;
+
+  const handleRowDoubleClick = useCallback(
+    (row: Record<string, unknown>) => {
+      if (!itemFormCode) {
+        return;
+      }
+      const recordId = row.id ?? row.ID ?? row.code;
+      if (!recordId) {
+        console.warn('Cannot open item form without record identifier');
+        return;
+      }
+      const title = inferRowTitle(row, columns);
+      openView(
+        { kind: 'form', formCode: itemFormCode, recordId: String(recordId) },
+        { title: title ?? `Запис ${recordId}` }
+      );
+    },
+    [columns, itemFormCode, openView]
+  );
+
   if (!entityCode) {
     return <div>Сутність не вибрана.</div>;
   }
@@ -95,7 +120,11 @@ export function TableView({ entityCode }: TableViewProps) {
         </thead>
         <tbody>
           {rows.map((row, rowIndex) => (
-            <tr key={getRowKey(row, rowIndex)}>
+            <tr
+              key={getRowKey(row, rowIndex)}
+              onDoubleClick={() => handleRowDoubleClick(row)}
+              style={{ cursor: itemFormCode ? 'pointer' : 'default' }}
+            >
               {columns.map((column) => (
                 <td key={column} style={{ border: '1px solid #ddd', padding: '0.5rem 0.75rem', verticalAlign: 'top' }}>
                   {formatCellValue(row[column])}
@@ -143,4 +172,20 @@ function formatCellValue(value: unknown): string {
     }
   }
   return String(value);
+}
+
+function inferRowTitle(row: Record<string, unknown>, columns: string[]): string | undefined {
+  const preferredKeys = ['name', 'title', 'code', 'number'];
+  for (const key of preferredKeys) {
+    if (typeof row[key] === 'string' && row[key]) {
+      return String(row[key]);
+    }
+  }
+  for (const column of columns) {
+    const value = row[column];
+    if (typeof value === 'string' && value) {
+      return value;
+    }
+  }
+  return undefined;
 }

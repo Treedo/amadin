@@ -29,6 +29,14 @@ export function listEntities(store: DataStore, entityCode: string): EntityRecord
   return [...(store.entities.get(entityCode) ?? [])];
 }
 
+export function getEntityRecord(store: DataStore, entityCode: string, recordId: string): EntityRecord | undefined {
+  const collection = store.entities.get(entityCode);
+  if (!collection) {
+    return undefined;
+  }
+  return collection.find((record) => record.id === recordId);
+}
+
 export function createEntity(
   store: DataStore,
   entity: DemoEntity,

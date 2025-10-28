@@ -6,7 +6,9 @@ import { useAmadin } from '../context/AmadinContext.js';
 import { useWindowManager } from '../context/WindowManagerContext.js';
 
 export function FormPage() {
-  const { formCode } = useParams();
+  const params = useParams();
+  const formCode = params.formCode;
+  const recordId = params.recordId;
   const { app, loadApp } = useAmadin();
   const { activeWindow, setWindowTitle } = useWindowManager();
 
@@ -30,5 +32,5 @@ export function FormPage() {
     return <p>Завантаження форми…</p>;
   }
 
-  return <FormRenderer app={app} formCode={formCode} />;
+  return <FormRenderer app={app} formCode={formCode} recordId={recordId} />;
 }

@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 export type ViewDescriptor =
   | { kind: 'overview' }
-  | { kind: 'form'; formCode: string }
+  | { kind: 'form'; formCode: string; recordId?: string }
   | { kind: 'entity'; entityCode: string };
 
 interface WindowEntry {
@@ -215,6 +215,9 @@ function buildPath(view: ViewDescriptor): string {
     return `/`;
   }
   if (view.kind === 'form') {
+    if (view.recordId) {
+      return `/forms/${view.formCode}/records/${view.recordId}`;
+    }
     return `/forms/${view.formCode}`;
   }
   return `/entities/${view.entityCode}`;
@@ -223,6 +226,11 @@ function buildPath(view: ViewDescriptor): string {
 function parseViewFromPath(path: string): ViewDescriptor | undefined {
   if (path === '/' || path === '') {
     return { kind: 'overview' };
+  }
+
+  const formRecordMatch = path.match(/^\/forms\/([^/]+)\/records\/([^/]+)$/);
+  if (formRecordMatch) {
+    return { kind: 'form', formCode: formRecordMatch[1], recordId: formRecordMatch[2] };
   }
 
   const formMatch = path.match(/^\/forms\/([^/]+)$/);
@@ -242,7 +250,7 @@ function defaultTitle(view: ViewDescriptor): string {
     case 'overview':
       return 'Панель';
     case 'form':
-      return `Форма ${view.formCode}`;
+      return view.recordId ? `Форма ${view.formCode}` : `Форма ${view.formCode}`;
     case 'entity':
       return `Каталог ${view.entityCode}`;
     default:
@@ -256,6 +264,9 @@ function createWindowId(view: ViewDescriptor): string {
     return `overview-${suffix}`;
   }
   if (view.kind === 'form') {
+    if (view.recordId) {
+      return `form-${view.formCode}-${view.recordId}-${suffix}`;
+    }
     return `form-${view.formCode}-${suffix}`;
   }
   return `entity-${view.entityCode}-${suffix}`;

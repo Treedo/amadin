@@ -10,8 +10,9 @@
       "fields": [
         { "code": "name", "name": "Назва", "type": "string", "required": true },
         { "code": "sku", "name": "Артикул", "type": "string" },
-        { "code": "unit", "name": "Одиниця виміру", "type": "string" },
-        { "code": "price", "name": "Ціна", "type": "decimal" }
+  { "code": "unit", "name": "Одиниця виміру", "type": "string" },
+  { "code": "description", "name": "Опис", "type": "string" },
+  { "code": "price", "name": "Ціна", "type": "decimal" }
       ]
     },
     {
@@ -137,7 +138,17 @@
           "items": [
             { "kind": "field", "entity": "goods", "field": "name", "widget": "input", "label": "Назва товару" },
             { "kind": "field", "entity": "goods", "field": "sku", "widget": "input", "label": "Артикул" },
-            { "kind": "field", "entity": "goods", "field": "unit", "widget": "input", "label": "Одиниця" },
+            { "kind": "field", "entity": "goods", "field": "unit", "widget": "input", "label": "Одиниця" }
+          ]
+        },
+        {
+          "code": "details",
+          "title": "Додаткові відомості",
+          "orientation": "vertical",
+          "color": "accent",
+          "autoGrow": true,
+          "items": [
+            { "kind": "field", "entity": "goods", "field": "description", "widget": "textarea", "label": "Опис" },
             { "kind": "field", "entity": "goods", "field": "price", "widget": "input", "label": "Ціна" }
           ]
         }

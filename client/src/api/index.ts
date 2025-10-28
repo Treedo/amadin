@@ -141,3 +141,12 @@ export async function fetchEntityRows(entityCode: string): Promise<unknown[]> {
   const json = await response.json();
   return json.data as unknown[];
 }
+
+export async function fetchEntityRecord(entityCode: string, recordId: string): Promise<Record<string, unknown>> {
+  const response = await fetch(`/api/entities/${entityCode}/${recordId}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch entity record');
+  }
+  const json = await response.json();
+  return json.data as Record<string, unknown>;
+}

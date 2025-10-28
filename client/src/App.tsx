@@ -10,6 +10,7 @@ export function App() {
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<AppOverviewPage />} />
+        <Route path="forms/:formCode/records/:recordId" element={<FormPage />} />
         <Route path="forms/:formCode" element={<FormPage />} />
         <Route path="entities/:entityCode" element={<EntityPage />} />
       </Route>
