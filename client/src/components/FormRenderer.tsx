@@ -1,8 +1,8 @@
-import { MouseEvent, useEffect, useMemo, useState } from 'react';
+import { MouseEvent, useMemo } from 'react';
 
-import { fetchEntityRows } from '../api/index.js';
 import type { AppManifest, UiForm, UiFormGroupItem } from '../api/index.js';
 import { useWindowManager } from '../context/WindowManagerContext.js';
+import { TableView } from './TableView.js';
 
 interface FormRendererProps {
   app: AppManifest;
@@ -18,24 +18,13 @@ export function FormRenderer({ app, formCode }: FormRendererProps) {
     const preferred = app.manifest.find((form) => form.code === 'overview');
     return preferred ?? app.manifest[0];
   }, [app.manifest, formCode]);
-  const [rows, setRows] = useState<unknown[]>([]);
-
-  useEffect(() => {
-    const entityCode = activeForm?.primaryEntity;
-    if (!activeForm || !entityCode) {
-      setRows([]);
-      return;
-    }
-    fetchEntityRows(entityCode)
-      .then(setRows)
-      .catch((error) => {
-        console.error('Failed to load entity rows', error);
-      });
-  }, [app, activeForm]);
 
   if (!activeForm) {
     return <p>Жодної форми не знайдено 🤷‍♀️</p>;
   }
+
+  const primaryEntity = activeForm.primaryEntity ?? '';
+  const isListForm = Boolean(activeForm.usage?.some((usage) => usage.role === 'list'));
 
   const handleLinkClick = (event: MouseEvent, item: Extract<UiFormGroupItem, { kind: 'link' }>) => {
     event.preventDefault();
@@ -69,75 +58,80 @@ export function FormRenderer({ app, formCode }: FormRendererProps) {
       <header>
         <h2>{activeForm.name}</h2>
       </header>
-      <div style={{ display: 'grid', gap: '1.5rem' }}>
-        {activeForm.groups.map((group) => (
-          <section
-            key={group.code}
-            style={{
-              border: '1px solid #e5e7eb',
-              borderRadius: '1rem',
-              padding: '1rem 1.5rem',
-              background: group.color === 'accent' ? '#f5f3ff' : '#fff',
-              display: 'grid',
-              gap: '1rem'
-            }}
-          >
-            <header>
-              <h3 style={{ margin: 0 }}>{group.title}</h3>
-            </header>
-            <div
+      {isListForm ? (
+        primaryEntity ? (
+          <TableView entityCode={primaryEntity} />
+        ) : (
+          <p style={{ color: '#6b7280' }}>Ця форма не має повʼязаної сутності для відображення списку.</p>
+        )
+      ) : (
+        <div style={{ display: 'grid', gap: '1.5rem' }}>
+          {activeForm.groups.map((group) => (
+            <section
+              key={group.code}
               style={{
+                border: '1px solid #e5e7eb',
+                borderRadius: '1rem',
+                padding: '1rem 1.5rem',
+                background: group.color === 'accent' ? '#f5f3ff' : '#fff',
                 display: 'grid',
-                gridTemplateColumns: group.orientation === 'horizontal' ? 'repeat(auto-fit, minmax(180px, 1fr))' : '1fr',
                 gap: '1rem'
               }}
             >
-              {group.items.map((item: UiFormGroupItem, index: number) => {
-                if (item.kind === 'field') {
-                  return (
-                    <label
-                      key={`${group.code}-${item.field}-${index}`}
-                      style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}
-                    >
-                      <span>
-                        {item.label}
-                        {item.required ? ' *' : ''}
-                      </span>
-                      <input type="text" placeholder={item.field} />
-                    </label>
-                  );
-                }
+              <header>
+                <h3 style={{ margin: 0 }}>{group.title}</h3>
+              </header>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: group.orientation === 'horizontal' ? 'repeat(auto-fit, minmax(180px, 1fr))' : '1fr',
+                  gap: '1rem'
+                }}
+              >
+                {group.items.map((item: UiFormGroupItem, index: number) => {
+                  if (item.kind === 'field') {
+                    return (
+                      <label
+                        key={`${group.code}-${item.field}-${index}`}
+                        style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}
+                      >
+                        <span>
+                          {item.label}
+                          {item.required ? ' *' : ''}
+                        </span>
+                        <input type="text" placeholder={item.field} />
+                      </label>
+                    );
+                  }
 
-                return (
-                  <button
-                    key={`${group.code}-${item.label}-${index}`}
-                    type="button"
-                    onClick={(event) => handleLinkClick(event, item)}
-                    onAuxClick={(event) => handleLinkClick(event, item)}
-                    style={{
-                      display: 'block',
-                      padding: '0.75rem 1rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '0.75rem',
-                      background: '#f9fafb',
-                      textAlign: 'left',
-                      color: '#1f2937',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <strong>{item.label}</strong>
-                    {item.description ? <p style={{ margin: '0.25rem 0 0 0' }}>{item.description}</p> : null}
-                    <small style={{ color: '#6b7280' }}>{resolveLinkHref(item)}</small>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        ))}
-      </div>
-      <pre style={{ marginTop: '2rem', padding: '1rem', background: '#f5f5f5' }}>
-        {JSON.stringify(rows, null, 2)}
-      </pre>
+                  return (
+                    <button
+                      key={`${group.code}-${item.label}-${index}`}
+                      type="button"
+                      onClick={(event) => handleLinkClick(event, item)}
+                      onAuxClick={(event) => handleLinkClick(event, item)}
+                      style={{
+                        display: 'block',
+                        padding: '0.75rem 1rem',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '0.75rem',
+                        background: '#f9fafb',
+                        textAlign: 'left',
+                        color: '#1f2937',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <strong>{item.label}</strong>
+                      {item.description ? <p style={{ margin: '0.25rem 0 0 0' }}>{item.description}</p> : null}
+                      <small style={{ color: '#6b7280' }}>{resolveLinkHref(item)}</small>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
