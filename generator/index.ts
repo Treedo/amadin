@@ -1,27 +1,21 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 
-import { buildPrismaSchema, buildUiManifest, validateConfig } from './schemaBuilder.js';
+import { generateArtifacts } from './generateArtifacts.js';
 
 async function main() {
   const configPath = process.argv[2] ?? path.resolve('examples/demo-config.json');
   const outputDir = process.argv[3] ?? path.resolve('generated');
-  const schemaPath = path.join(outputDir, 'app.prisma');
-  const manifestPath = path.join(outputDir, 'ui-manifest.json');
-
-  const fileContent = await fs.readFile(configPath, 'utf8');
-  const rawConfig = JSON.parse(fileContent);
-  const config = validateConfig(rawConfig);
-
-  const prismaSchema = buildPrismaSchema(config);
-  const uiManifest = buildUiManifest(config);
-
   await fs.mkdir(outputDir, { recursive: true });
-  await fs.writeFile(schemaPath, prismaSchema, 'utf8');
-  await fs.writeFile(manifestPath, JSON.stringify(uiManifest, null, 2), 'utf8');
+  const result = await generateArtifacts(configPath, outputDir);
 
-  console.log(`Generated Prisma schema at ${schemaPath}`);
-  console.log(`Generated UI manifest at ${manifestPath}`);
+  console.log(`Generated Prisma schema at ${result.schemaPath}`);
+  console.log(`Generated UI manifest at ${result.manifestPath}`);
+  console.log(`Wrote entity state snapshot at ${result.statePath}`);
+  console.log(`Wrote migration diff report at ${result.reportPath}`);
+  console.log(
+    `Diff summary: +${result.report.summary.added.length} / ~${result.report.summary.updated.length} / -${result.report.summary.removed.length}`
+  );
 }
 
 main().catch((error) => {

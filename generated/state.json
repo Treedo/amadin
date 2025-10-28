@@ -1,0 +1,105 @@
+[
+  {
+    "code": "goods",
+    "name": "Товари",
+    "kind": "catalog",
+    "fields": [
+      {
+        "code": "name",
+        "type": "string",
+        "required": true
+      },
+      {
+        "code": "sku",
+        "type": "string",
+        "required": false
+      },
+      {
+        "code": "unit",
+        "type": "string",
+        "required": false
+      },
+      {
+        "code": "price",
+        "type": "decimal",
+        "required": false
+      }
+    ]
+  },
+  {
+    "code": "client",
+    "name": "Клієнти",
+    "kind": "catalog",
+    "fields": [
+      {
+        "code": "name",
+        "type": "string",
+        "required": true
+      },
+      {
+        "code": "taxCode",
+        "type": "string",
+        "required": false
+      },
+      {
+        "code": "phone",
+        "type": "string",
+        "required": false
+      }
+    ]
+  },
+  {
+    "code": "goodsReceipt",
+    "name": "Надходження товарів",
+    "kind": "document",
+    "fields": [
+      {
+        "code": "number",
+        "type": "string",
+        "required": true
+      },
+      {
+        "code": "date",
+        "type": "date",
+        "required": true
+      },
+      {
+        "code": "supplier",
+        "type": "string",
+        "required": false
+      },
+      {
+        "code": "totalAmount",
+        "type": "decimal",
+        "required": false
+      }
+    ]
+  },
+  {
+    "code": "goodsShipment",
+    "name": "Видаткова накладна",
+    "kind": "document",
+    "fields": [
+      {
+        "code": "number",
+        "type": "string",
+        "required": true
+      },
+      {
+        "code": "date",
+        "type": "date",
+        "required": true
+      },
+      {
+        "code": "customer",
+        "type": "string",
+        "required": false
+      },
+      {
+        "code": "totalAmount",
+        "type": "decimal",
+        "required": false
+      }
+    ]
+  }
+]

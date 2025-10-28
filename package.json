@@ -9,6 +9,7 @@
     "dev:server": "tsx server/index.ts",
     "dev:client": "vite --config client/vite.config.ts",
     "generate": "tsx generator/index.ts",
+    "migrate": "tsx cli/index.ts migrate",
     "seed": "tsx core/seed.ts",
     "cli": "tsx cli/index.ts"
   },
