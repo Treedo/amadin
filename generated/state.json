@@ -20,6 +20,11 @@
         "required": false
       },
       {
+        "code": "description",
+        "type": "string",
+        "required": false
+      },
+      {
         "code": "price",
         "type": "decimal",
         "required": false

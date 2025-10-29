@@ -2,7 +2,7 @@ import { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } fro
 
 import { getDefaultAppId, getDefaultApplication } from '../../services/dbRegistry.js';
 import { canAccessEntity } from '../../services/security.js';
-import { createEntity, getDataStore, getEntityRecord, listEntities } from '../../utils/prismaLoader.js';
+import { createEntityRecord, getEntityRecord as loadEntityRecord, listEntityRecords } from '../../services/entityStore.js';
 import type { DemoEntity } from '@generator/schemaBuilder.js';
 
 interface EntityParams {
@@ -37,9 +37,8 @@ const entitiesRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
         return { error: 'Entity not found' };
       }
 
-      const store = getDataStore(appId, application.config);
-      const rows = listEntities(store, entityCode);
-      return { data: rows };
+  const rows = await listEntityRecords(entity);
+  return { data: rows };
     }
   );
 
@@ -61,8 +60,7 @@ const entitiesRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
         return { error: 'Entity not found' };
       }
 
-      const store = getDataStore(appId, application.config);
-      const record = createEntity(store, entity, request.body?.data ?? {});
+      const record = await createEntityRecord(entity, request.body?.data ?? {});
       reply.code(201);
       return { data: record };
     }
@@ -91,8 +89,7 @@ const entitiesRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
           return { error: 'Entity not found' };
         }
 
-        const store = getDataStore(appId, application.config);
-        const record = getEntityRecord(store, entityCode, recordId);
+        const record = await loadEntityRecord(entity, recordId);
         if (!record) {
           reply.code(404);
           return { error: 'Record not found' };

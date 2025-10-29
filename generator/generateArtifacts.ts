@@ -2,7 +2,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 import { diffSnapshots, snapshotConfig } from './entityDiff.js';
-import { buildPrismaSchema, buildUiArtifacts, DemoConfig, validateConfig } from './schemaBuilder.js';
+import { buildPrismaSchema, buildUiArtifacts, DemoConfig, UiArtifacts, validateConfig } from './schemaBuilder.js';
 
 export interface GenerationResult {
   config: DemoConfig;
@@ -21,6 +21,7 @@ export interface GenerationResult {
     };
     diff: ReturnType<typeof diffSnapshots>;
   };
+  artifacts: UiArtifacts;
 }
 
 export async function generateArtifacts(configPath: string, outputDir: string): Promise<GenerationResult> {
@@ -70,7 +71,8 @@ export async function generateArtifacts(configPath: string, outputDir: string): 
     statePath,
     reportPath,
     diff,
-    report
+    report,
+    artifacts
   };
 }
 

@@ -1,14 +1,7 @@
-import { promises as fs } from 'fs';
 import path from 'path';
 
-import {
-  buildUiArtifacts,
-  DemoConfig,
-  DemoSidebarGroup,
-  EntityFormDefaults,
-  UiManifest,
-  validateConfig
-} from '@generator/schemaBuilder.js';
+import { generateArtifacts, GenerationResult } from '@generator/generateArtifacts.js';
+import { DemoConfig, DemoSidebarGroup, EntityFormDefaults, UiManifest } from '@generator/schemaBuilder.js';
 import { logger } from '../utils/logger.js';
 
 type RegisteredApp = {
@@ -21,12 +14,15 @@ type RegisteredApp = {
 const registry = new Map<string, RegisteredApp>();
 let defaultAppId: string | undefined;
 
-export async function loadRegistry(configPath = path.resolve('examples/demo-config.json')) {
+export async function loadRegistry(
+  configPath = path.resolve('examples/demo-config.json'),
+  outputDir = path.resolve('generated')
+): Promise<GenerationResult> {
   const resolvedPath = configPath;
   logger.info(`Loading application config from ${resolvedPath}`);
-  const file = await fs.readFile(resolvedPath, 'utf8');
-  const config = validateConfig(JSON.parse(file));
-  const artifacts = buildUiArtifacts(config);
+  const result = await generateArtifacts(resolvedPath, outputDir);
+  const { config } = result;
+  const artifacts = result.artifacts;
   registry.clear();
   registry.set(config.appId, {
     config,
@@ -35,6 +31,7 @@ export async function loadRegistry(configPath = path.resolve('examples/demo-conf
     sidebar: artifacts.sidebar
   });
   defaultAppId = config.appId;
+  return result;
 }
 
 export function listApplications(): Array<{ id: string; name: string }> {

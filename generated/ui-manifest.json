@@ -110,6 +110,23 @@
             "label": "Одиниця",
             "widget": "input",
             "required": false
+          }
+        ]
+      },
+      {
+        "code": "details",
+        "title": "Додаткові відомості",
+        "orientation": "vertical",
+        "color": "accent",
+        "autoGrow": true,
+        "items": [
+          {
+            "kind": "field",
+            "entity": "goods",
+            "field": "description",
+            "label": "Опис",
+            "widget": "textarea",
+            "required": false
           },
           {
             "kind": "field",
@@ -320,6 +337,14 @@
             "entity": "goods",
             "field": "unit",
             "label": "Одиниця виміру",
+            "widget": "input",
+            "required": false
+          },
+          {
+            "kind": "field",
+            "entity": "goods",
+            "field": "description",
+            "label": "Опис",
             "widget": "input",
             "required": false
           },

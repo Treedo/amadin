@@ -1,14 +1,20 @@
 import Fastify from 'fastify';
 import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
+import dotenv from 'dotenv';
+import path from 'path';
 
 import apiRoute from './routes/api/index.js';
 import appRoute from './routes/app.js';
 import rootRoute from './routes/root.js';
 import { loadRegistry } from './services/dbRegistry.js';
+import { ensureEntityTables } from './services/entitySerializer.js';
 import { logger } from './utils/logger.js';
 
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+
 async function bootstrap() {
-  await loadRegistry();
+  const generation = await loadRegistry();
+  await ensureEntityTables({ generation });
 
   const server = Fastify({ logger: false });
   server.setErrorHandler((error: FastifyError, _request: FastifyRequest, reply: FastifyReply) => {
