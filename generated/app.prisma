@@ -13,6 +13,7 @@ model Goods {
   name String
   sku String?
   unit String?
+  primarySupplier String?
   description String?
   price Decimal?
   createdAt DateTime @default(now())

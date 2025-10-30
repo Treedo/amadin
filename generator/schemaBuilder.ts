@@ -1,11 +1,34 @@
 import { z } from 'zod';
 
-const fieldSchema = z.object({
-  code: z.string().min(1),
-  name: z.string().min(1),
-  type: z.enum(['string', 'number', 'decimal', 'date', 'boolean', 'grid']).default('string'),
-  required: z.boolean().default(false)
+const referenceSchema = z.object({
+  entity: z.string().min(1),
+  labelField: z.string().min(1).optional()
 });
+
+const fieldSchema = z
+  .object({
+    code: z.string().min(1),
+    name: z.string().min(1),
+    type: z.enum(['string', 'number', 'decimal', 'date', 'boolean', 'grid', 'reference']).default('string'),
+    required: z.boolean().default(false),
+    reference: referenceSchema.optional()
+  })
+  .superRefine((data, ctx) => {
+    if (data.type === 'reference' && !data.reference) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['reference'],
+        message: 'Reference fields must declare a reference configuration.'
+      });
+    }
+    if (data.type !== 'reference' && data.reference) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['reference'],
+        message: 'Only reference fields may include reference metadata.'
+      });
+    }
+  });
 
 const entitySchema = z.object({
   code: z.string().min(1),
@@ -103,6 +126,7 @@ export interface UiManifest {
           label: string;
           widget: DemoFormField['widget'];
           required: boolean;
+          reference?: DemoField['reference'];
         }
       | {
           kind: 'link';
@@ -139,7 +163,8 @@ const prismaTypeMap: Record<DemoField['type'], string> = {
   decimal: 'Decimal',
   date: 'DateTime',
   boolean: 'Boolean',
-  grid: 'String'
+  grid: 'String',
+  reference: 'String'
 };
 
 const defaultScalarAttributes: Partial<Record<DemoField['type'], string>> = {
@@ -153,7 +178,8 @@ const defaultWidgetByFieldType: Record<DemoField['type'], DemoFormField['widget'
   decimal: 'input',
   date: 'datepicker',
   boolean: 'switch',
-  grid: 'input'
+  grid: 'input',
+  reference: 'select'
 };
 
 export function buildPrismaSchema(config: DemoConfig): string {
@@ -183,7 +209,8 @@ export function buildUiArtifacts(config: DemoConfig): UiArtifacts {
             field: item.field,
             label: item.label ?? fieldDefinition?.name ?? item.field,
             widget: item.widget,
-            required: fieldDefinition?.required ?? false
+            required: fieldDefinition?.required ?? false,
+            reference: fieldDefinition?.reference
           };
         }
 
@@ -322,7 +349,8 @@ function createDefaultForm(entity: DemoEntity, code: string, role: 'list' | 'ite
     field: field.code,
     label: field.name,
     widget: defaultWidgetByFieldType[field.type] ?? 'input',
-    required: Boolean(field.required)
+    required: Boolean(field.required),
+    reference: field.reference
   }));
 
   const form: UiManifest = {

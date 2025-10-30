@@ -1,7 +1,7 @@
 import { ChangeEvent, FormEvent, MouseEvent, useEffect, useMemo, useState } from 'react';
 
 import type { AppManifest, UiForm, UiFormGroupItem } from '../api/index.js';
-import { createEntityRecord, fetchEntityRecord, updateEntityRecord } from '../api/index.js';
+import { createEntityRecord, fetchEntityRecord, fetchEntityRows, updateEntityRecord } from '../api/index.js';
 import { useWindowManager } from '../context/WindowManagerContext.js';
 import { TableView } from './TableView.js';
 
@@ -17,6 +17,11 @@ type RecordData = Record<string, unknown>;
 
 type FormValues = Record<string, string>;
 
+type ReferenceOption = {
+  value: string;
+  label: string;
+};
+
 export function FormRenderer({ app, formCode, recordId }: FormRendererProps) {
   const { openView, activeWindow, replaceView } = useWindowManager();
   const activeForm = useMemo<UiForm | undefined>(() => {
@@ -28,6 +33,7 @@ export function FormRenderer({ app, formCode, recordId }: FormRendererProps) {
   }, [app.manifest, formCode]);
 
   const fieldItems = useMemo<FieldItem[]>(() => (activeForm ? extractFieldItems(activeForm) : []), [activeForm]);
+  const referenceFields = useMemo(() => fieldItems.filter((item) => Boolean(item.reference)), [fieldItems]);
 
   if (!activeForm) {
     return <p>Жодної форми не знайдено 🤷‍♀️</p>;
@@ -51,6 +57,66 @@ export function FormRenderer({ app, formCode, recordId }: FormRendererProps) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+  const [referenceOptions, setReferenceOptions] = useState<Record<string, ReferenceOption[]>>({});
+  const [referenceLoading, setReferenceLoading] = useState<Record<string, boolean>>({});
+  const [referenceErrors, setReferenceErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!referenceFields.length) {
+      setReferenceOptions({});
+      setReferenceLoading({});
+      setReferenceErrors({});
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadOptions = async () => {
+      const loadingState: Record<string, boolean> = {};
+      referenceFields.forEach((field) => {
+        loadingState[field.field] = true;
+      });
+      setReferenceLoading(loadingState);
+
+      const nextOptions: Record<string, ReferenceOption[]> = {};
+      const nextErrors: Record<string, string> = {};
+
+      for (const field of referenceFields) {
+        const reference = field.reference;
+        if (!reference) {
+          nextOptions[field.field] = [];
+          continue;
+        }
+
+        try {
+          const rows = await fetchEntityRows(reference.entity);
+          nextOptions[field.field] = buildReferenceOptions(rows, reference.labelField);
+        } catch (error) {
+          console.error(`Failed to load options for ${field.field}`, error);
+          nextErrors[field.field] = 'Не вдалося завантажити варіанти.';
+          nextOptions[field.field] = [];
+        }
+      }
+
+      if (cancelled) {
+        return;
+      }
+
+      setReferenceOptions(nextOptions);
+      setReferenceErrors(nextErrors);
+      const clearedLoading: Record<string, boolean> = {};
+      referenceFields.forEach((field) => {
+        clearedLoading[field.field] = false;
+      });
+      setReferenceLoading(clearedLoading);
+    };
+
+    loadOptions();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [referenceFields]);
 
   useEffect(() => {
     if (isListForm) {
@@ -111,7 +177,7 @@ export function FormRenderer({ app, formCode, recordId }: FormRendererProps) {
 
   const handleFieldChange = (
     fieldCode: string,
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const value = event.target.value;
     setFormValues((previous) => ({ ...previous, [fieldCode]: value }));
@@ -283,6 +349,12 @@ export function FormRenderer({ app, formCode, recordId }: FormRendererProps) {
                 {group.items.map((item: UiFormGroupItem, index: number) => {
                   if (item.kind === 'field') {
                     const value = formValues[item.field] ?? '';
+                    const options = referenceOptions[item.field] ?? [];
+                    const loadingOptions = Boolean(referenceLoading[item.field]);
+                    const errorMessage = referenceErrors[item.field];
+                    const needsFallbackOption = Boolean(
+                      value && !options.some((option) => option.value === value)
+                    );
                     return (
                       <label
                         key={`${group.code}-${item.field}-${index}`}
@@ -299,6 +371,21 @@ export function FormRenderer({ app, formCode, recordId }: FormRendererProps) {
                             onChange={(event) => handleFieldChange(item.field, event)}
                             style={{ minHeight: '4rem', resize: 'vertical' }}
                           />
+                        ) : item.widget === 'select' || item.reference ? (
+                          <select
+                            value={value}
+                            onChange={(event) => handleFieldChange(item.field, event)}
+                            disabled={loadingOptions}
+                            style={{ padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #d1d5db' }}
+                          >
+                            <option value="">Не обрано</option>
+                            {needsFallbackOption ? <option value={value}>{value}</option> : null}
+                            {options.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
                         ) : (
                           <input
                             type="text"
@@ -307,6 +394,22 @@ export function FormRenderer({ app, formCode, recordId }: FormRendererProps) {
                             onChange={(event) => handleFieldChange(item.field, event)}
                           />
                         )}
+                        {item.widget === 'select' || item.reference
+                          ? (() => {
+                              const helperText = errorMessage
+                                ? errorMessage
+                                : loadingOptions
+                                  ? 'Завантаження варіантів…'
+                                  : options.length
+                                    ? 'Виберіть значення зі списку.'
+                                    : '';
+                              return helperText ? (
+                                <span style={{ fontSize: '0.8rem', color: errorMessage ? '#c0392b' : '#6b7280' }}>
+                                  {helperText}
+                                </span>
+                              ) : null;
+                            })()
+                          : null}
                       </label>
                     );
                   }
@@ -389,6 +492,58 @@ function buildPayload(fields: FieldItem[], values: FormValues): RecordData {
     payload[field.field] = value === '' ? null : value;
   }
   return payload;
+}
+
+function buildReferenceOptions(rows: unknown[], labelField?: string): ReferenceOption[] {
+  if (!Array.isArray(rows)) {
+    return [];
+  }
+
+  const options: ReferenceOption[] = [];
+  const seen = new Set<string>();
+
+  for (const row of rows) {
+    if (!isRecordValue(row)) {
+      continue;
+    }
+    const record = row as Record<string, unknown>;
+    const identifier = record.id ?? record['ID'] ?? record.code;
+    if (typeof identifier !== 'string' && typeof identifier !== 'number') {
+      continue;
+    }
+    const value = String(identifier);
+    if (seen.has(value)) {
+      continue;
+    }
+    const label = resolveReferenceLabel(record, labelField) ?? value;
+    options.push({ value, label });
+    seen.add(value);
+  }
+
+  return options;
+}
+
+function resolveReferenceLabel(record: Record<string, unknown>, labelField?: string): string | undefined {
+  if (labelField) {
+    const candidate = record[labelField];
+    if (typeof candidate === 'string' && candidate.trim()) {
+      return candidate;
+    }
+  }
+
+  const preferredKeys = ['name', 'title', 'code', 'number'];
+  for (const key of preferredKeys) {
+    const candidate = record[key];
+    if (typeof candidate === 'string' && candidate.trim()) {
+      return candidate;
+    }
+  }
+
+  return undefined;
+}
+
+function isRecordValue(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
 function resolveLinkHref(item: Extract<UiFormGroupItem, { kind: 'link' }>): string {

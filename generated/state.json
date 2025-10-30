@@ -20,6 +20,11 @@
         "required": false
       },
       {
+        "code": "primarySupplier",
+        "type": "reference",
+        "required": false
+      },
+      {
         "code": "description",
         "type": "string",
         "required": false

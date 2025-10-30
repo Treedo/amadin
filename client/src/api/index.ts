@@ -6,6 +6,10 @@ export type UiFormGroupItem =
       label: string;
       widget: string;
       required: boolean;
+      reference?: {
+        entity: string;
+        labelField?: string;
+      };
     }
   | {
       kind: 'link';

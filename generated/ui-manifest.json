@@ -110,6 +110,18 @@
             "label": "Одиниця",
             "widget": "input",
             "required": false
+          },
+          {
+            "kind": "field",
+            "entity": "goods",
+            "field": "primarySupplier",
+            "label": "Основний постачальник",
+            "widget": "select",
+            "required": false,
+            "reference": {
+              "entity": "client",
+              "labelField": "name"
+            }
           }
         ]
       },
@@ -339,6 +351,18 @@
             "label": "Одиниця виміру",
             "widget": "input",
             "required": false
+          },
+          {
+            "kind": "field",
+            "entity": "goods",
+            "field": "primarySupplier",
+            "label": "Основний постачальник",
+            "widget": "select",
+            "required": false,
+            "reference": {
+              "entity": "client",
+              "labelField": "name"
+            }
           },
           {
             "kind": "field",

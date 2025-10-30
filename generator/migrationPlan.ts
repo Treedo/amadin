@@ -19,7 +19,8 @@ const sqlTypeMap: Record<DemoField['type'], string> = {
   decimal: 'DECIMAL(65,30)',
   date: 'TIMESTAMP(3)',
   boolean: 'BOOLEAN',
-  grid: 'TEXT'
+  grid: 'TEXT',
+  reference: 'TEXT'
 };
 
 export function createMigrationPlan(diff: EntityDiff): MigrationPlan {

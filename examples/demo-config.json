@@ -10,9 +10,15 @@
       "fields": [
         { "code": "name", "name": "Назва", "type": "string", "required": true },
         { "code": "sku", "name": "Артикул", "type": "string" },
-  { "code": "unit", "name": "Одиниця виміру", "type": "string" },
-  { "code": "description", "name": "Опис", "type": "string" },
-  { "code": "price", "name": "Ціна", "type": "decimal" }
+        { "code": "unit", "name": "Одиниця виміру", "type": "string" },
+        {
+          "code": "primarySupplier",
+          "name": "Основний постачальник",
+          "type": "reference",
+          "reference": { "entity": "client", "labelField": "name" }
+        },
+        { "code": "description", "name": "Опис", "type": "string" },
+        { "code": "price", "name": "Ціна", "type": "decimal" }
       ]
     },
     {
@@ -138,7 +144,14 @@
           "items": [
             { "kind": "field", "entity": "goods", "field": "name", "widget": "input", "label": "Назва товару" },
             { "kind": "field", "entity": "goods", "field": "sku", "widget": "input", "label": "Артикул" },
-            { "kind": "field", "entity": "goods", "field": "unit", "widget": "input", "label": "Одиниця" }
+            { "kind": "field", "entity": "goods", "field": "unit", "widget": "input", "label": "Одиниця" },
+            {
+              "kind": "field",
+              "entity": "goods",
+              "field": "primarySupplier",
+              "widget": "select",
+              "label": "Основний постачальник"
+            }
           ]
         },
         {
