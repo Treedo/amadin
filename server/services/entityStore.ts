@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type { QueryResult, QueryResultRow } from 'pg';
 
 import { DemoEntity, DemoField } from '@generator/schemaBuilder.js';
@@ -32,6 +33,11 @@ export async function createEntityRecord(
   const tableName = modelName(entity.code);
   const prepared = prepareInsert(entity.fields, payload);
 
+  if (!prepared.columns.includes('id')) {
+    prepared.columns.unshift('id');
+    prepared.values.unshift(randomUUID());
+  }
+
   const statement = buildInsertStatement(tableName, prepared.columns);
   const result = await runQuery(statement, prepared.values);
   const row = result.rows[0];
@@ -41,16 +47,59 @@ export async function createEntityRecord(
   return mapRowToRecord(row);
 }
 
+export async function updateEntityRecord(
+  entity: DemoEntity,
+  recordId: string,
+  payload: Record<string, unknown>
+): Promise<EntityRecord | undefined> {
+  const tableName = modelName(entity.code);
+  const prepared = prepareUpdate(entity.fields, payload);
+
+  const assignments: string[] = [];
+  const params: unknown[] = [];
+
+  prepared.columns.forEach((column, index) => {
+    assignments.push(`"${column}" = $${index + 1}`);
+    params.push(prepared.values[index]);
+  });
+
+  assignments.push(`"updatedAt" = CURRENT_TIMESTAMP`);
+  params.push(recordId);
+
+  const whereParamIndex = prepared.columns.length + 1;
+  const statement = `UPDATE "${tableName}" SET ${assignments.join(', ')} WHERE "id" = $${whereParamIndex} RETURNING *`;
+  const result = await runQuery(statement, params);
+  const row = result.rows[0];
+  return row ? mapRowToRecord(row) : undefined;
+}
+
 function prepareInsert(fields: DemoField[], payload: Record<string, unknown>) {
   const columns: string[] = [];
   const values: unknown[] = [];
 
   for (const field of fields) {
     const columnName = fieldName(field.code);
-    if (Object.hasOwn(payload, field.code)) {
+    if (Object.prototype.hasOwnProperty.call(payload, field.code)) {
       const value = (payload as Record<string, unknown>)[field.code];
       if (value !== undefined) {
-        columns.push(`"${columnName}"`);
+        columns.push(columnName);
+        values.push(value);
+      }
+    }
+  }
+
+  return { columns, values };
+}
+
+function prepareUpdate(fields: DemoField[], payload: Record<string, unknown>) {
+  const columns: string[] = [];
+  const values: unknown[] = [];
+
+  for (const field of fields) {
+    if (Object.prototype.hasOwnProperty.call(payload, field.code)) {
+      const value = (payload as Record<string, unknown>)[field.code];
+      if (value !== undefined) {
+        columns.push(fieldName(field.code));
         values.push(value);
       }
     }
@@ -65,7 +114,7 @@ function buildInsertStatement(tableName: string, columns: string[]): string {
   }
 
   const placeholders = Array.from({ length: columns.length }, (_, index) => `$${index + 1}`).join(', ');
-  const columnList = columns.join(', ');
+  const columnList = columns.map((column) => `"${column}"`).join(', ');
   return `INSERT INTO "${tableName}" (${columnList}) VALUES (${placeholders}) RETURNING *`;
 }
 
@@ -73,7 +122,7 @@ async function runQuery(query: string, params: unknown[] = []): Promise<QueryRes
   const pool = getAppPool();
   const client = await pool.connect();
   try {
-  return await client.query<QueryResultRow>(query, params as any[]);
+    return await client.query<QueryResultRow>(query, params as any[]);
   } finally {
     client.release();
   }

@@ -150,3 +150,50 @@ export async function fetchEntityRecord(entityCode: string, recordId: string): P
   const json = await response.json();
   return json.data as Record<string, unknown>;
 }
+
+export async function createEntityRecord(
+  entityCode: string,
+  data: Record<string, unknown>
+): Promise<Record<string, unknown>> {
+  const response = await fetch(`/api/entities/${entityCode}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data })
+  });
+  if (!response.ok) {
+    const message = await safeErrorMessage(response);
+    throw new Error(message ?? 'Failed to create entity record');
+  }
+  const json = await response.json();
+  return json.data as Record<string, unknown>;
+}
+
+export async function updateEntityRecord(
+  entityCode: string,
+  recordId: string,
+  data: Record<string, unknown>
+): Promise<Record<string, unknown>> {
+  const response = await fetch(`/api/entities/${entityCode}/${recordId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data })
+  });
+  if (!response.ok) {
+    const message = await safeErrorMessage(response);
+    throw new Error(message ?? 'Failed to update entity record');
+  }
+  const json = await response.json();
+  return json.data as Record<string, unknown>;
+}
+
+async function safeErrorMessage(response: Response): Promise<string | null> {
+  try {
+    const json = await response.json();
+    if (json && typeof json === 'object' && 'error' in json) {
+      return String(json.error);
+    }
+  } catch {
+    // Ignore JSON parsing issues
+  }
+  return null;
+}
