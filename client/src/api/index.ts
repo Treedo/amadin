@@ -1,3 +1,45 @@
+export interface ReferenceOption {
+  value: string;
+  label: string;
+}
+
+export interface ReferenceSearchParams {
+  search?: string;
+  limit?: number;
+  labelField?: string;
+  values?: string[];
+}
+
+export async function searchEntityReference(
+  entityCode: string,
+  params: ReferenceSearchParams
+): Promise<ReferenceOption[]> {
+  const query = new URLSearchParams();
+  if (params.search) {
+    query.set('search', params.search);
+  }
+  if (params.limit) {
+    query.set('limit', String(params.limit));
+  }
+  if (params.labelField) {
+    query.set('labelField', params.labelField);
+  }
+  if (params.values?.length) {
+    query.set('values', params.values.join(','));
+  }
+
+  const url = `/api/entities/${entityCode}/reference${query.toString() ? `?${query.toString()}` : ''}`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch reference options');
+  }
+  const json = await response.json();
+  const data = Array.isArray(json.data) ? json.data : [];
+  return data.map((entry: any) => ({
+    value: String(entry.value),
+    label: typeof entry.label === 'string' ? entry.label : String(entry.value)
+  }));
+}
 export type UiFormGroupItem =
   | {
       kind: 'field';

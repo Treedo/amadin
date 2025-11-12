@@ -1,7 +1,8 @@
-import { ChangeEvent, FormEvent, MouseEvent, useEffect, useMemo, useState } from 'react';
+import { ChangeEvent, FormEvent, MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { AppManifest, UiForm, UiFormGroupItem } from '../api/index.js';
-import { createEntityRecord, fetchEntityRecord, fetchEntityRows, updateEntityRecord } from '../api/index.js';
+import type { ReferenceOption } from '../api/index.js';
+import { createEntityRecord, fetchEntityRecord, searchEntityReference, updateEntityRecord } from '../api/index.js';
 import { useWindowManager } from '../context/WindowManagerContext.js';
 import { TableView } from './TableView.js';
 
@@ -17,11 +18,6 @@ type RecordData = Record<string, unknown>;
 
 type FormValues = Record<string, string>;
 
-type ReferenceOption = {
-  value: string;
-  label: string;
-};
-
 export function FormRenderer({ app, formCode, recordId }: FormRendererProps) {
   const { openView, activeWindow, replaceView } = useWindowManager();
   const activeForm = useMemo<UiForm | undefined>(() => {
@@ -34,6 +30,13 @@ export function FormRenderer({ app, formCode, recordId }: FormRendererProps) {
 
   const fieldItems = useMemo<FieldItem[]>(() => (activeForm ? extractFieldItems(activeForm) : []), [activeForm]);
   const referenceFields = useMemo(() => fieldItems.filter((item) => Boolean(item.reference)), [fieldItems]);
+  const referenceFieldMap = useMemo<Record<string, FieldItem>>(() => {
+    const map: Record<string, FieldItem> = {};
+    referenceFields.forEach((field) => {
+      map[field.field] = field;
+    });
+    return map;
+  }, [referenceFields]);
 
   if (!activeForm) {
     return <p>Жодної форми не знайдено 🤷‍♀️</p>;
@@ -60,63 +63,32 @@ export function FormRenderer({ app, formCode, recordId }: FormRendererProps) {
   const [referenceOptions, setReferenceOptions] = useState<Record<string, ReferenceOption[]>>({});
   const [referenceLoading, setReferenceLoading] = useState<Record<string, boolean>>({});
   const [referenceErrors, setReferenceErrors] = useState<Record<string, string>>({});
+  const [referenceSearchTerms, setReferenceSearchTerms] = useState<Record<string, string>>({});
+  const [referenceSelections, setReferenceSelections] = useState<Record<string, ReferenceOption | null>>({});
+  const [referenceDropdownOpen, setReferenceDropdownOpen] = useState<Record<string, boolean>>({});
+  const referenceSearchTimers = useRef<Record<string, number | undefined>>({});
 
-  useEffect(() => {
-    if (!referenceFields.length) {
-      setReferenceOptions({});
-      setReferenceLoading({});
-      setReferenceErrors({});
-      return;
-    }
-
-    let cancelled = false;
-
-    const loadOptions = async () => {
-      const loadingState: Record<string, boolean> = {};
-      referenceFields.forEach((field) => {
-        loadingState[field.field] = true;
-      });
-      setReferenceLoading(loadingState);
-
-      const nextOptions: Record<string, ReferenceOption[]> = {};
-      const nextErrors: Record<string, string> = {};
-
-      for (const field of referenceFields) {
-        const reference = field.reference;
-        if (!reference) {
-          nextOptions[field.field] = [];
-          continue;
-        }
-
-        try {
-          const rows = await fetchEntityRows(reference.entity);
-          nextOptions[field.field] = buildReferenceOptions(rows, reference.labelField);
-        } catch (error) {
-          console.error(`Failed to load options for ${field.field}`, error);
-          nextErrors[field.field] = 'Не вдалося завантажити варіанти.';
-          nextOptions[field.field] = [];
-        }
+  const resetReferenceState = useCallback(() => {
+    Object.values(referenceSearchTimers.current).forEach((timer) => {
+      if (timer) {
+        clearTimeout(timer);
       }
-
-      if (cancelled) {
-        return;
-      }
-
-      setReferenceOptions(nextOptions);
-      setReferenceErrors(nextErrors);
-      const clearedLoading: Record<string, boolean> = {};
-      referenceFields.forEach((field) => {
-        clearedLoading[field.field] = false;
-      });
-      setReferenceLoading(clearedLoading);
-    };
-
-    loadOptions();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [referenceFields]);
+    });
+    referenceSearchTimers.current = {};
+    setReferenceOptions({});
+    setReferenceLoading({});
+    setReferenceErrors({});
+    setReferenceSearchTerms({});
+    setReferenceSelections({});
+    setReferenceDropdownOpen({});
+  }, [
+    setReferenceOptions,
+    setReferenceLoading,
+    setReferenceErrors,
+    setReferenceSearchTerms,
+    setReferenceSelections,
+    setReferenceDropdownOpen
+  ]);
 
   useEffect(() => {
     if (isListForm) {
@@ -124,6 +96,7 @@ export function FormRenderer({ app, formCode, recordId }: FormRendererProps) {
       setRecordLoading(false);
       setRecordError(null);
       setFormValues({});
+      resetReferenceState();
       return;
     }
 
@@ -135,6 +108,7 @@ export function FormRenderer({ app, formCode, recordId }: FormRendererProps) {
       setRecordLoading(false);
       setRecordError('Ця форма не має сутності для відображення.');
       setFormValues(buildInitialValues(fieldItems, null));
+      resetReferenceState();
       return;
     }
 
@@ -143,12 +117,14 @@ export function FormRenderer({ app, formCode, recordId }: FormRendererProps) {
       setRecordLoading(false);
       setRecordError(null);
       setFormValues(buildInitialValues(fieldItems, null));
+      resetReferenceState();
       return;
     }
 
     let cancelled = false;
     setRecordLoading(true);
     setRecordError(null);
+    resetReferenceState();
 
     fetchEntityRecord(primaryEntity, recordId)
       .then((fetched) => {
@@ -173,7 +149,176 @@ export function FormRenderer({ app, formCode, recordId }: FormRendererProps) {
     return () => {
       cancelled = true;
     };
-  }, [fieldItems, isListForm, primaryEntity, recordId]);
+  }, [fieldItems, isListForm, primaryEntity, recordId, resetReferenceState]);
+
+  const loadReferenceOptions = useCallback(
+    async (fieldCode: string, searchTerm = '') => {
+      const field = referenceFieldMap[fieldCode];
+      if (!field || !field.reference) {
+        return;
+      }
+
+      setReferenceLoading((previous) => ({ ...previous, [fieldCode]: true }));
+      setReferenceErrors((previous) => ({ ...previous, [fieldCode]: '' }));
+
+      try {
+        const normalized = searchTerm.trim();
+        const options = await searchEntityReference(field.reference.entity, {
+          search: normalized.length ? normalized : undefined,
+          limit: 20,
+          labelField: field.reference.labelField
+        });
+        setReferenceOptions((previous) => ({ ...previous, [fieldCode]: options }));
+      } catch (error) {
+        console.error(`Failed to load options for ${fieldCode}`, error);
+        setReferenceOptions((previous) => ({ ...previous, [fieldCode]: [] }));
+        setReferenceErrors((previous) => ({ ...previous, [fieldCode]: 'Не вдалося завантажити варіанти.' }));
+      } finally {
+        setReferenceLoading((previous) => ({ ...previous, [fieldCode]: false }));
+      }
+    },
+    [referenceFieldMap]
+  );
+
+  const loadReferenceSelection = useCallback(
+    async (fieldCode: string, value: string) => {
+      const field = referenceFieldMap[fieldCode];
+      if (!field || !field.reference || !value) {
+        return;
+      }
+
+      try {
+        const options = await searchEntityReference(field.reference.entity, {
+          values: [value],
+          labelField: field.reference.labelField
+        });
+        const selection = options[0] ?? { value, label: value };
+        setReferenceSelections((previous) => ({ ...previous, [fieldCode]: selection }));
+        setReferenceSearchTerms((previous) => ({ ...previous, [fieldCode]: selection.label }));
+      } catch (error) {
+        console.error(`Failed to resolve reference value for ${fieldCode}`, error);
+        setReferenceSelections((previous) => ({ ...previous, [fieldCode]: { value, label: value } }));
+        setReferenceSearchTerms((previous) => ({ ...previous, [fieldCode]: value }));
+        setReferenceErrors((previous) => ({ ...previous, [fieldCode]: 'Не вдалося завантажити вибране значення.' }));
+      }
+    },
+    [referenceFieldMap]
+  );
+
+  useEffect(() => {
+    referenceFields.forEach((field) => {
+      const fieldCode = field.field;
+      const currentValue = formValues[fieldCode];
+
+      if (typeof currentValue === 'string' && currentValue) {
+        const currentSelection = referenceSelections[fieldCode];
+        if (!currentSelection || currentSelection.value !== currentValue) {
+          loadReferenceSelection(fieldCode, currentValue);
+        } else if (!referenceSearchTerms[fieldCode]) {
+          setReferenceSearchTerms((previous) => ({ ...previous, [fieldCode]: currentSelection.label }));
+        }
+      }
+    });
+  }, [referenceFields, formValues, loadReferenceSelection, referenceSelections, referenceSearchTerms]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(referenceSearchTimers.current).forEach((timer) => {
+        if (timer) {
+          clearTimeout(timer);
+        }
+      });
+    };
+  }, []);
+
+  const handleReferenceInputFocus = useCallback(
+    (fieldCode: string) => {
+      setReferenceDropdownOpen((previous) => ({ ...previous, [fieldCode]: true }));
+      const term = referenceSearchTerms[fieldCode] ?? '';
+      loadReferenceOptions(fieldCode, term);
+    },
+    [loadReferenceOptions, referenceSearchTerms]
+  );
+
+  const handleReferenceInputBlur = useCallback((fieldCode: string) => {
+    window.setTimeout(() => {
+      setReferenceDropdownOpen((previous) => ({ ...previous, [fieldCode]: false }));
+    }, 150);
+  }, []);
+
+  const handleReferenceInputChange = useCallback(
+    (fieldCode: string, term: string) => {
+      setReferenceSearchTerms((previous) => ({ ...previous, [fieldCode]: term }));
+      setReferenceSelections((previous) => {
+        const existing = previous[fieldCode];
+        if (!existing) {
+          return previous;
+        }
+        if (existing.label === term) {
+          return previous;
+        }
+        return { ...previous, [fieldCode]: null };
+      });
+      setReferenceErrors((previous) => ({ ...previous, [fieldCode]: '' }));
+      setReferenceDropdownOpen((previous) => ({ ...previous, [fieldCode]: true }));
+      setFormValues((previous) => ({ ...previous, [fieldCode]: '' }));
+      setSaveError(null);
+      setSaveSuccess(null);
+
+      const timers = referenceSearchTimers.current;
+      const existingTimer = timers[fieldCode];
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+
+      timers[fieldCode] = window.setTimeout(() => {
+        loadReferenceOptions(fieldCode, term);
+      }, 250);
+    },
+    [loadReferenceOptions]
+  );
+
+  const handleReferenceSelectOption = useCallback(
+    (fieldCode: string, option: ReferenceOption) => {
+      setReferenceSelections((previous) => ({ ...previous, [fieldCode]: option }));
+      setReferenceSearchTerms((previous) => ({ ...previous, [fieldCode]: option.label }));
+      setReferenceOptions((previous) => {
+        const existing = previous[fieldCode] ?? [];
+        const deduped = [option, ...existing.filter((candidate) => candidate.value !== option.value)];
+        return { ...previous, [fieldCode]: deduped };
+      });
+      setFormValues((previous) => ({ ...previous, [fieldCode]: option.value }));
+      setReferenceDropdownOpen((previous) => ({ ...previous, [fieldCode]: false }));
+      const timers = referenceSearchTimers.current;
+      const existingTimer = timers[fieldCode];
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+        timers[fieldCode] = undefined;
+      }
+      setSaveError(null);
+      setSaveSuccess(null);
+    },
+    []
+  );
+
+  const handleReferenceClear = useCallback(
+    (fieldCode: string) => {
+      setReferenceSelections((previous) => ({ ...previous, [fieldCode]: null }));
+      setReferenceSearchTerms((previous) => ({ ...previous, [fieldCode]: '' }));
+      setReferenceDropdownOpen((previous) => ({ ...previous, [fieldCode]: false }));
+      setReferenceOptions((previous) => ({ ...previous, [fieldCode]: [] }));
+      setFormValues((previous) => ({ ...previous, [fieldCode]: '' }));
+      const timers = referenceSearchTimers.current;
+      const existingTimer = timers[fieldCode];
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+        timers[fieldCode] = undefined;
+      }
+      setSaveError(null);
+      setSaveSuccess(null);
+    },
+    []
+  );
 
   const handleFieldChange = (
     fieldCode: string,
@@ -349,11 +494,9 @@ export function FormRenderer({ app, formCode, recordId }: FormRendererProps) {
                 {group.items.map((item: UiFormGroupItem, index: number) => {
                   if (item.kind === 'field') {
                     const value = formValues[item.field] ?? '';
-                    const options = referenceOptions[item.field] ?? [];
-                    const loadingOptions = Boolean(referenceLoading[item.field]);
-                    const errorMessage = referenceErrors[item.field];
+                    const fieldReferenceOptions = referenceOptions[item.field] ?? [];
                     const needsFallbackOption = Boolean(
-                      value && !options.some((option) => option.value === value)
+                      value && !fieldReferenceOptions.some((option) => option.value === value)
                     );
                     return (
                       <label
@@ -371,16 +514,115 @@ export function FormRenderer({ app, formCode, recordId }: FormRendererProps) {
                             onChange={(event) => handleFieldChange(item.field, event)}
                             style={{ minHeight: '4rem', resize: 'vertical' }}
                           />
-                        ) : item.widget === 'select' || item.reference ? (
+                        ) : item.reference ? (
+                          <div style={{ position: 'relative' }}>
+                            <input
+                              type="text"
+                              value={referenceSearchTerms[item.field] ?? ''}
+                              onFocus={() => handleReferenceInputFocus(item.field)}
+                              onBlur={() => handleReferenceInputBlur(item.field)}
+                              onChange={(event) => handleReferenceInputChange(item.field, event.target.value)}
+                              placeholder="Почніть вводити для пошуку"
+                              style={{
+                                width: '100%',
+                                padding: '0.5rem 2.5rem 0.5rem 0.75rem',
+                                borderRadius: '0.5rem',
+                                border: '1px solid #d1d5db'
+                              }}
+                            />
+                            {referenceSelections[item.field] ? (
+                              <button
+                                type="button"
+                                onMouseDown={(event) => event.preventDefault()}
+                                onClick={() => handleReferenceClear(item.field)}
+                                style={{
+                                  position: 'absolute',
+                                  top: '50%',
+                                  right: '0.5rem',
+                                  transform: 'translateY(-50%)',
+                                  border: 'none',
+                                  background: 'transparent',
+                                  cursor: 'pointer',
+                                  color: '#6b7280'
+                                }}
+                                aria-label="Очистити вибране"
+                              >
+                                ×
+                              </button>
+                            ) : null}
+                            {referenceDropdownOpen[item.field] ? (
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  zIndex: 10,
+                                  top: '100%',
+                                  left: 0,
+                                  right: 0,
+                                  marginTop: '0.25rem',
+                                  border: '1px solid #d1d5db',
+                                  borderRadius: '0.5rem',
+                                  background: '#fff',
+                                  boxShadow: '0 10px 25px rgba(15, 23, 42, 0.12)',
+                                  maxHeight: '240px',
+                                  overflowY: 'auto'
+                                }}
+                              >
+                                {referenceLoading[item.field] ? (
+                                  <div style={{ padding: '0.75rem', color: '#6b7280' }}>Завантаження…</div>
+                                ) : null}
+                                {referenceErrors[item.field] ? (
+                                  <div style={{ padding: '0.75rem', color: '#c0392b' }}>
+                                    {referenceErrors[item.field]}
+                                  </div>
+                                ) : null}
+                                {!referenceLoading[item.field] && !referenceErrors[item.field] ? (
+                                  fieldReferenceOptions.length ? (
+                                    fieldReferenceOptions.map((option) => {
+                                      const selected = referenceSelections[item.field]?.value === option.value;
+                                      return (
+                                        <button
+                                          key={option.value}
+                                          type="button"
+                                          onMouseDown={(event) => event.preventDefault()}
+                                          onClick={() => handleReferenceSelectOption(item.field, option)}
+                                          style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'flex-start',
+                                            gap: '0.15rem',
+                                            width: '100%',
+                                            border: 'none',
+                                            background: selected ? '#eff6ff' : '#fff',
+                                            color: '#111827',
+                                            textAlign: 'left',
+                                            padding: '0.6rem 0.85rem',
+                                            cursor: 'pointer',
+                                            borderBottom: '1px solid #f3f4f6'
+                                          }}
+                                        >
+                                          <span>{option.label}</span>
+                                          {option.label !== option.value ? (
+                                            <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>{option.value}</span>
+                                          ) : null}
+                                        </button>
+                                      );
+                                    })
+                                  ) : (
+                                    <div style={{ padding: '0.75rem', color: '#6b7280' }}>Нічого не знайдено</div>
+                                  )
+                                ) : null}
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : item.widget === 'select' ? (
                           <select
                             value={value}
                             onChange={(event) => handleFieldChange(item.field, event)}
-                            disabled={loadingOptions}
                             style={{ padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #d1d5db' }}
                           >
                             <option value="">Не обрано</option>
                             {needsFallbackOption ? <option value={value}>{value}</option> : null}
-                            {options.map((option) => (
+                            {fieldReferenceOptions.map((option) => (
                               <option key={option.value} value={option.value}>
                                 {option.label}
                               </option>
@@ -394,22 +636,34 @@ export function FormRenderer({ app, formCode, recordId }: FormRendererProps) {
                             onChange={(event) => handleFieldChange(item.field, event)}
                           />
                         )}
-                        {item.widget === 'select' || item.reference
+                        {item.reference
                           ? (() => {
-                              const helperText = errorMessage
-                                ? errorMessage
-                                : loadingOptions
-                                  ? 'Завантаження варіантів…'
-                                  : options.length
-                                    ? 'Виберіть значення зі списку.'
-                                    : '';
+                              const helperText = referenceErrors[item.field]
+                                ? referenceErrors[item.field]
+                                : referenceSelections[item.field]
+                                  ? `Обране значення: ${referenceSelections[item.field]?.label}`
+                                  : referenceLoading[item.field]
+                                    ? 'Завантаження варіантів…'
+                                    : 'Почніть вводити, щоб знайти значення.';
                               return helperText ? (
-                                <span style={{ fontSize: '0.8rem', color: errorMessage ? '#c0392b' : '#6b7280' }}>
+                                <span
+                                  style={{
+                                    fontSize: '0.8rem',
+                                    color: referenceErrors[item.field] ? '#c0392b' : '#6b7280'
+                                  }}
+                                >
                                   {helperText}
                                 </span>
                               ) : null;
                             })()
-                          : null}
+                          : item.widget === 'select'
+                            ? (() => {
+                                const helperText = fieldReferenceOptions.length ? 'Виберіть значення зі списку.' : '';
+                                return helperText ? (
+                                  <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>{helperText}</span>
+                                ) : null;
+                              })()
+                            : null}
                       </label>
                     );
                   }

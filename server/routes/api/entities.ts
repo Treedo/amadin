@@ -6,6 +6,7 @@ import {
   createEntityRecord,
   getEntityRecord as loadEntityRecord,
   listEntityRecords,
+  searchEntityReferenceOptions,
   updateEntityRecord
 } from '../../services/entityStore.js';
 import type { DemoEntity } from '@generator/schemaBuilder.js';
@@ -16,6 +17,13 @@ interface EntityParams {
 
 interface CreateBody {
   data: Record<string, unknown>;
+}
+
+interface ReferenceQuery {
+  search?: string;
+  limit?: string;
+  values?: string;
+  labelField?: string;
 }
 
 const entitiesRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
@@ -136,6 +144,53 @@ const entitiesRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
         return { data: record };
       }
     );
+
+  fastify.get<{ Params: EntityParams; Querystring: ReferenceQuery }>(
+    '/entities/:entityCode/reference',
+    async (request: FastifyRequest<{ Params: EntityParams; Querystring: ReferenceQuery }>, reply: FastifyReply) => {
+      const application = getDefaultApplication();
+      const appId = getDefaultAppId();
+      const { entityCode } = request.params;
+
+      if (!application || !appId) {
+        reply.code(404);
+        return { error: 'Application not found' };
+      }
+
+      if (!canAccessEntity({}, { appId, entityCode })) {
+        reply.code(403);
+        return { error: 'Access denied' };
+      }
+
+      const entity = application.config.entities.find((item: DemoEntity) => item.code === entityCode);
+      if (!entity) {
+        reply.code(404);
+        return { error: 'Entity not found' };
+      }
+
+      const { search, limit, labelField, values } = request.query;
+      const parsedLimit = limit ? Number.parseInt(limit, 10) : undefined;
+      const safeLimit = parsedLimit && Number.isFinite(parsedLimit) ? parsedLimit : undefined;
+      const parsedValues = values
+        ? values
+            .split(',')
+            .map((value) => value.trim())
+            .filter(Boolean)
+        : undefined;
+
+      const options = {
+        search,
+        limit: safeLimit,
+        labelField,
+        values: parsedValues
+      };
+
+      const rows = await searchEntityReferenceOptions(entity, options);
+      return {
+        data: rows.map((row) => ({ value: row.id, label: row.label }))
+      };
+    }
+  );
 };
 
 export default entitiesRoute;

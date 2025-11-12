@@ -11,6 +11,18 @@ export interface EntityRecord {
   [key: string]: unknown;
 }
 
+export interface ReferenceSearchOptions {
+  search?: string;
+  limit?: number;
+  values?: string[];
+  labelField?: string;
+}
+
+export interface ReferenceOptionRow {
+  id: string;
+  label: string;
+}
+
 export async function listEntityRecords(entity: DemoEntity): Promise<EntityRecord[]> {
   const tableName = modelName(entity.code);
   const query = `SELECT * FROM "${tableName}" ORDER BY "createdAt" DESC`;
@@ -73,6 +85,39 @@ export async function updateEntityRecord(
   return row ? mapRowToRecord(row) : undefined;
 }
 
+export async function searchEntityReferenceOptions(
+  entity: DemoEntity,
+  options: ReferenceSearchOptions
+): Promise<ReferenceOptionRow[]> {
+  const tableName = modelName(entity.code);
+  const labelFieldCode = inferLabelField(entity, options.labelField);
+  const labelColumn = labelFieldCode ? fieldName(labelFieldCode) : undefined;
+  const labelSelect = labelColumn ? `"${labelColumn}" AS label` : '"id"::text AS label';
+
+  if (options.values && options.values.length > 0) {
+    const statement = `SELECT "id", ${labelSelect} FROM "${tableName}" WHERE "id" = ANY($1::text[])`;
+    const result = await runQuery(statement, [options.values]);
+    return normalizeReferenceRows(result.rows);
+  }
+
+  const limit = Math.max(1, Math.min(options.limit ?? 20, 100));
+  const clauses: string[] = [];
+  const params: unknown[] = [];
+
+  if (options.search && options.search.trim()) {
+    const term = options.search.trim();
+    const searchColumn = labelColumn ? `"${labelColumn}"::text` : '"id"::text';
+    clauses.push(`${searchColumn} ILIKE $${params.length + 1}`);
+    params.push(`%${term}%`);
+  }
+
+  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+  const orderColumn = labelColumn ? `"${labelColumn}"` : '"id"';
+  const statement = `SELECT "id", ${labelSelect} FROM "${tableName}" ${where} ORDER BY ${orderColumn} ASC LIMIT ${limit}`;
+  const result = await runQuery(statement, params);
+  return normalizeReferenceRows(result.rows);
+}
+
 function prepareInsert(fields: DemoField[], payload: Record<string, unknown>) {
   const columns: string[] = [];
   const values: unknown[] = [];
@@ -108,6 +153,23 @@ function prepareUpdate(fields: DemoField[], payload: Record<string, unknown>) {
   return { columns, values };
 }
 
+function normalizeReferenceRows(rows: QueryResultRow[]): ReferenceOptionRow[] {
+  return rows
+    .map((row) => {
+      const { id } = row;
+      if (id == null) {
+        return null;
+      }
+      const labelValue = 'label' in row ? row.label : undefined;
+      const label = labelValue == null ? String(id) : String(labelValue);
+      return {
+        id: String(id),
+        label
+      };
+    })
+    .filter((option): option is ReferenceOptionRow => Boolean(option));
+}
+
 function buildInsertStatement(tableName: string, columns: string[]): string {
   if (columns.length === 0) {
     return `INSERT INTO "${tableName}" DEFAULT VALUES RETURNING *`;
@@ -116,6 +178,26 @@ function buildInsertStatement(tableName: string, columns: string[]): string {
   const placeholders = Array.from({ length: columns.length }, (_, index) => `$${index + 1}`).join(', ');
   const columnList = columns.map((column) => `"${column}"`).join(', ');
   return `INSERT INTO "${tableName}" (${columnList}) VALUES (${placeholders}) RETURNING *`;
+}
+
+function inferLabelField(entity: DemoEntity, preferred?: string): string | undefined {
+  if (preferred) {
+    const matched = entity.fields.find((field) => field.code === preferred);
+    if (matched) {
+      return matched.code;
+    }
+  }
+
+  const priority = ['name', 'title', 'code'];
+  for (const key of priority) {
+    const match = entity.fields.find((field) => field.code === key);
+    if (match) {
+      return match.code;
+    }
+  }
+
+  const stringField = entity.fields.find((field) => field.type === 'string');
+  return stringField?.code;
 }
 
 async function runQuery(query: string, params: unknown[] = []): Promise<QueryResult<QueryResultRow>> {
