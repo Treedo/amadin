@@ -1,0 +1,57 @@
+{
+  "name": "amadin-vscode",
+  "displayName": "Amadin Configuration Explorer",
+  "description": "Browse and manage Amadin configurations from a dedicated tree view.",
+  "version": "0.0.1",
+  "publisher": "amadin",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "amadin.openConfigurationTree",
+        "title": "Amadin: Open Configuration Tree",
+        "category": "Amadin"
+      },
+      {
+        "command": "amadin.openConfigurationDetails",
+        "title": "Amadin: Show Configuration Details",
+        "category": "Amadin"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "amadinConfiguration",
+          "title": "Amadin",
+          "icon": "media/amadin.svg"
+        }
+      ]
+    },
+    "views": {
+      "amadinConfiguration": [
+        {
+          "id": "amadin.configurationTree",
+          "name": "Configuration"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -w -p ./",
+    "package": "npm run compile",
+    "lint": "echo 'No linting configured'",
+    "test": "echo 'No tests yet'"
+  },
+  "devDependencies": {
+    "@types/node": "20.19.0",
+    "@types/vscode": "1.90.0",
+    "typescript": "5.5.4"
+  }
+}
