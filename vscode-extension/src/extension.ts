@@ -2,10 +2,13 @@ import * as vscode from 'vscode';
 import { ConfigurationTreeDataProvider } from './tree/configurationTreeDataProvider';
 import { buildSampleConfigurationTree } from './tree/sampleData';
 import { ConfigurationNodeData } from './tree/types';
+import { SelectionBus } from './selectionBus';
+import { PropertiesViewProvider } from './properties/propertiesViewProvider';
 
 export function activate(context: vscode.ExtensionContext): void {
   const rootModel = buildSampleConfigurationTree();
   const dataProvider = new ConfigurationTreeDataProvider(rootModel);
+  const selectionBus = new SelectionBus();
   const treeView = vscode.window.createTreeView('amadin.configurationTree', {
     treeDataProvider: dataProvider,
     showCollapseAll: true
@@ -13,6 +16,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(treeView);
   context.subscriptions.push(dataProvider);
+  context.subscriptions.push(selectionBus);
 
   const openTree = vscode.commands.registerCommand('amadin.openConfigurationTree', async () => {
     await vscode.commands.executeCommand('workbench.view.extension.amadinConfiguration');
@@ -29,7 +33,19 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   );
 
-  context.subscriptions.push(openTree, openDetails);
+  const propertiesProvider = new PropertiesViewProvider(context.extensionUri, selectionBus);
+  const propertiesRegistration = vscode.window.registerWebviewViewProvider(
+    PropertiesViewProvider.viewId,
+    propertiesProvider
+  );
+  void vscode.commands.executeCommand('amadin.configurationProperties.focus');
+
+  const selectionListener = treeView.onDidChangeSelection((event) => {
+    const [first] = event.selection;
+    selectionBus.setSelection(first?.node);
+  });
+
+  context.subscriptions.push(openTree, openDetails, propertiesProvider, propertiesRegistration, selectionListener);
 }
 
 export function deactivate(): void {

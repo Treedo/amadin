@@ -38,6 +38,12 @@
         {
           "id": "amadin.configurationTree",
           "name": "Configuration"
+        },
+        {
+          "type": "webview",
+          "id": "amadin.configurationProperties",
+          "name": "Properties",
+          "contextualTitle": "Amadin Properties"
         }
       ]
     }

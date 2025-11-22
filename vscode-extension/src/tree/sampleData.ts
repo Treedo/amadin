@@ -93,6 +93,10 @@ function buildSalesEntities(): ConfigurationNodeData {
             fieldNode('amadin-field-customer-id', 'id', 'uuid'),
             fieldNode('amadin-field-customer-name', 'name', 'string'),
             fieldNode('amadin-field-customer-email', 'email', 'string')
+          ]),
+          buildFormsGroup('amadin-entity-customer-forms', [
+            formNode('amadin-entity-customer-card', 'Customer Card', 'Main directory form'),
+            formNode('amadin-entity-customer-quick', 'Quick Edit', 'Compact inline editor')
           ])
         ]
       },
@@ -107,6 +111,10 @@ function buildSalesEntities(): ConfigurationNodeData {
             fieldNode('amadin-field-order-date', 'date', 'date'),
             fieldNode('amadin-field-order-customer', 'customer', 'ref(Customer)'),
             fieldNode('amadin-field-order-total', 'total', 'float')
+          ]),
+          buildFormsGroup('amadin-entity-order-forms', [
+            formNode('amadin-entity-order-entry', 'Order Entry', 'Primary document form'),
+            formNode('amadin-entity-order-picking', 'Picking Sheet', 'Warehouse picking UI')
           ])
         ]
       },
@@ -119,26 +127,6 @@ function buildSalesEntities(): ConfigurationNodeData {
         id: 'amadin-entity-sales-report',
         label: 'SalesByCustomer',
         kind: 'entityReport'
-      }
-    ]
-  };
-}
-
-function buildSalesForms(): ConfigurationNodeData {
-  return {
-    id: 'amadin-module-sales-forms',
-    label: 'Forms',
-    kind: 'section',
-    children: [
-      {
-        id: 'amadin-form-customer',
-        label: 'CustomerForm',
-        kind: 'form'
-      },
-      {
-        id: 'amadin-form-order',
-        label: 'OrderForm',
-        kind: 'form'
       }
     ]
   };
@@ -179,6 +167,18 @@ function buildSalesPermissions(): ConfigurationNodeData {
   };
 }
 
+function buildSalesForms(): ConfigurationNodeData {
+  return {
+    id: 'amadin-module-sales-forms',
+    label: 'Forms',
+    kind: 'section',
+    children: [
+      formNode('amadin-form-sales-dashboard', 'Sales Dashboard', 'Cross-entity analytics'),
+      formNode('amadin-form-sales-forecast', 'Sales Forecast', 'Scenario planning workspace')
+    ]
+  };
+}
+
 function buildInventoryModule(): ConfigurationNodeData {
   return {
     id: 'amadin-module-inventory',
@@ -194,22 +194,27 @@ function buildInventoryModule(): ConfigurationNodeData {
             id: 'amadin-entity-product',
             label: 'Product',
             kind: 'entityDirectory',
-            description: 'Directory'
+            description: 'Directory',
+            children: [
+              buildFormsGroup('amadin-entity-product-forms', [
+                formNode('amadin-entity-product-card', 'Product Card', 'Comprehensive product form')
+              ])
+            ]
           }
         ]
       },
-      {
-        id: 'amadin-module-inventory-forms',
-        label: 'Forms',
-        kind: 'section',
-        children: [
-          {
-            id: 'amadin-form-product',
-            label: 'ProductForm',
-            kind: 'form'
-          }
-        ]
-      }
+      buildInventoryForms()
+    ]
+  };
+}
+
+function buildInventoryForms(): ConfigurationNodeData {
+  return {
+    id: 'amadin-module-inventory-forms',
+    label: 'Forms',
+    kind: 'section',
+    children: [
+      formNode('amadin-form-stock-balance', 'Stock Balance', 'Global stock snapshot')
     ]
   };
 }
@@ -313,12 +318,30 @@ function buildFieldsGroup(id: string, fields: ConfigurationNodeData[]): Configur
   };
 }
 
+function buildFormsGroup(id: string, forms: ConfigurationNodeData[]): ConfigurationNodeData {
+  return {
+    id,
+    label: 'Forms',
+    kind: 'section',
+    children: forms
+  };
+}
+
 function fieldNode(id: string, name: string, type: string): ConfigurationNodeData {
   return {
     id,
     label: name,
     kind: 'field',
     description: type
+  };
+}
+
+function formNode(id: string, name: string, description?: string): ConfigurationNodeData {
+  return {
+    id,
+    label: name,
+    kind: 'form',
+    description
   };
 }
 
