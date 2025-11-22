@@ -1,5 +1,4 @@
 import Fastify from 'fastify';
-import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 import dotenv from 'dotenv';
 import path from 'path';
 
@@ -9,6 +8,8 @@ import rootRoute from './routes/root.js';
 import { loadRegistry } from './services/dbRegistry.js';
 import { ensureEntityTables } from './services/entitySerializer.js';
 import { logger } from './utils/logger.js';
+import loggingPlugin from './plugins/logging.js';
+import errorHandlerPlugin from './plugins/errorHandler.js';
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
@@ -17,10 +18,8 @@ async function bootstrap() {
   await ensureEntityTables({ generation });
 
   const server = Fastify({ logger: false });
-  server.setErrorHandler((error: FastifyError, _request: FastifyRequest, reply: FastifyReply) => {
-    logger.error(error);
-    reply.status(error.statusCode ?? 500).send({ error: error.message });
-  });
+  await server.register(loggingPlugin);
+  await server.register(errorHandlerPlugin);
 
   server.register(rootRoute);
   server.register(appRoute);

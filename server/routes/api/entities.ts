@@ -6,6 +6,7 @@ import {
   createEntityRecord,
   getEntityRecord as loadEntityRecord,
   listEntityRecords,
+  markEntityRecordDeleted,
   searchEntityReferenceOptions,
   updateEntityRecord
 } from '../../services/entityStore.js';
@@ -50,8 +51,8 @@ const entitiesRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
         return { error: 'Entity not found' };
       }
 
-  const rows = await listEntityRecords(entity);
-  return { data: rows };
+      const rows = await listEntityRecords(entity);
+      return { data: rows };
     }
   );
 
@@ -112,38 +113,71 @@ const entitiesRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     }
   );
 
-    fastify.get<{ Params: EntityParams & { recordId: string } }>(
-      '/entities/:entityCode/:recordId',
-      async (request: FastifyRequest<{ Params: EntityParams & { recordId: string } }>, reply: FastifyReply) => {
-        const application = getDefaultApplication();
-        const appId = getDefaultAppId();
-        const { entityCode, recordId } = request.params;
+  fastify.get<{ Params: EntityParams & { recordId: string } }>(
+    '/entities/:entityCode/:recordId',
+    async (request: FastifyRequest<{ Params: EntityParams & { recordId: string } }>, reply: FastifyReply) => {
+      const application = getDefaultApplication();
+      const appId = getDefaultAppId();
+      const { entityCode, recordId } = request.params;
 
-        if (!application || !appId) {
-          reply.code(404);
-          return { error: 'Application not found' };
-        }
-
-        if (!canAccessEntity({}, { appId, entityCode })) {
-          reply.code(403);
-          return { error: 'Access denied' };
-        }
-
-        const entity = application.config.entities.find((item: DemoEntity) => item.code === entityCode);
-        if (!entity) {
-          reply.code(404);
-          return { error: 'Entity not found' };
-        }
-
-        const record = await loadEntityRecord(entity, recordId);
-        if (!record) {
-          reply.code(404);
-          return { error: 'Record not found' };
-        }
-
-        return { data: record };
+      if (!application || !appId) {
+        reply.code(404);
+        return { error: 'Application not found' };
       }
-    );
+
+      if (!canAccessEntity({}, { appId, entityCode })) {
+        reply.code(403);
+        return { error: 'Access denied' };
+      }
+
+      const entity = application.config.entities.find((item: DemoEntity) => item.code === entityCode);
+      if (!entity) {
+        reply.code(404);
+        return { error: 'Entity not found' };
+      }
+
+      const record = await loadEntityRecord(entity, recordId);
+      if (!record) {
+        reply.code(404);
+        return { error: 'Record not found' };
+      }
+
+      return { data: record };
+    }
+  );
+
+  fastify.delete<{ Params: EntityParams & { recordId: string } }>(
+    '/entities/:entityCode/:recordId',
+    async (request: FastifyRequest<{ Params: EntityParams & { recordId: string } }>, reply: FastifyReply) => {
+      const application = getDefaultApplication();
+      const appId = getDefaultAppId();
+      const { entityCode, recordId } = request.params;
+
+      if (!application || !appId) {
+        reply.code(404);
+        return { error: 'Application not found' };
+      }
+
+      if (!canAccessEntity({}, { appId, entityCode })) {
+        reply.code(403);
+        return { error: 'Access denied' };
+      }
+
+      const entity = application.config.entities.find((item: DemoEntity) => item.code === entityCode);
+      if (!entity) {
+        reply.code(404);
+        return { error: 'Entity not found' };
+      }
+
+      const isMarked = await markEntityRecordDeleted(entity, recordId);
+      if (!isMarked) {
+        reply.code(404);
+        return { error: 'Record not found' };
+      }
+
+      reply.code(204);
+    }
+  );
 
   fastify.get<{ Params: EntityParams; Querystring: ReferenceQuery }>(
     '/entities/:entityCode/reference',

@@ -45,14 +45,6 @@ export function FormRenderer({ app, formCode, recordId }: FormRendererProps) {
   const primaryEntity = activeForm.primaryEntity ?? '';
   const isListForm = Boolean(activeForm.usage?.some((usage) => usage.role === 'list'));
   const itemFormCode = primaryEntity ? app.defaults.entities[primaryEntity]?.item.formCode : undefined;
-  const itemFormName = useMemo(() => {
-    if (!itemFormCode) {
-      return undefined;
-    }
-    const form = app.manifest.find((candidate) => candidate.code === itemFormCode);
-    return form?.name;
-  }, [app.manifest, itemFormCode]);
-
   const [record, setRecord] = useState<RecordData | null>(null);
   const [recordLoading, setRecordLoading] = useState(false);
   const [recordError, setRecordError] = useState<string | null>(null);
@@ -381,16 +373,6 @@ export function FormRenderer({ app, formCode, recordId }: FormRendererProps) {
     }
   };
 
-  const handleCreateNewRecord = (event: MouseEvent<HTMLButtonElement>) => {
-    if (!primaryEntity || !itemFormCode) {
-      console.warn('Cannot open creation form without entity defaults.');
-      return;
-    }
-    const newWindow = isAdditionalWindow(event);
-    const title = itemFormName ? `${itemFormName} — новий запис` : 'Новий запис';
-    openView({ kind: 'form', formCode: itemFormCode }, { newWindow, title });
-  };
-
   const handleLinkClick = (event: MouseEvent, item: Extract<UiFormGroupItem, { kind: 'link' }>) => {
     event.preventDefault();
     const newWindow = isAdditionalWindow(event);
@@ -428,30 +410,6 @@ export function FormRenderer({ app, formCode, recordId }: FormRendererProps) {
       {isListForm ? (
         primaryEntity ? (
           <div style={{ display: 'grid', gap: '1rem' }}>
-            {itemFormCode ? (
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <button
-                  type="button"
-                  onClick={handleCreateNewRecord}
-                  onAuxClick={handleCreateNewRecord}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    padding: '0.75rem 1.25rem',
-                    borderRadius: '0.75rem',
-                    border: '1px solid #2563eb',
-                    background: '#2563eb',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    fontWeight: 600
-                  }}
-                >
-                  <span style={{ fontSize: '1.1rem', lineHeight: 1 }}>+</span>
-                  <span>Створити</span>
-                </button>
-              </div>
-            ) : null}
             <TableView entityCode={primaryEntity} />
           </div>
         ) : (

@@ -36,6 +36,7 @@ const entitySchema = z.object({
   kind: z.enum(['catalog', 'document', 'register']).default('catalog'),
   defaultListForm: z.string().min(1).optional(),
   defaultItemForm: z.string().min(1).optional(),
+  listInlineEditing: z.boolean().default(false),
   fields: z.array(fieldSchema).min(1)
 });
 
@@ -269,7 +270,7 @@ export function validateConfig(data: unknown): DemoConfig {
 
 function buildModelBlock(entity: DemoEntity): string {
   const header = `model ${pascalCase(entity.code)} {`;
-  const baseFields = ['  id        String   @id @default(uuid())'];
+  const baseFields = ['  id        String   @id @default(uuid())', '  markedForDeletion Boolean @default(false)'];
   const scalarFields = entity.fields.map((field: DemoField) => {
     const prismaType = prismaTypeMap[field.type];
     const optionalSuffix = field.required ? '' : '?';

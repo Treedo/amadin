@@ -11,31 +11,35 @@
     "generate": "tsx generator/index.ts",
     "migrate": "tsx cli/index.ts migrate",
     "seed": "tsx core/seed.ts",
-    "cli": "tsx cli/index.ts"
+    "cli": "tsx cli/index.ts",
+    "test": "vitest"
   },
   "dependencies": {
     "@prisma/client": "5.18.0",
+    "@tanstack/react-virtual": "^3.13.12",
     "commander": "11.1.0",
     "fastify": "4.29.1",
-    "pg": "8.11.5",
     "node-fetch": "3.3.2",
+    "pg": "8.11.5",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-router-dom": "6.28.0",
     "zod": "3.23.8"
   },
   "devDependencies": {
-  "@types/node": "20.19.0",
+    "@types/node": "20.19.0",
+    "@types/pg": "8.11.6",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
-  "@types/pg": "8.11.6",
     "@vitejs/plugin-react": "^4.7.0",
+    "dotenv": "16.3.1",
     "prisma": "5.18.0",
     "ts-node": "10.9.2",
     "tslib": "2.6.2",
     "tsx": "4.20.6",
     "typescript": "5.5.4",
     "vite": "^7.1.10",
-    "dotenv": "16.3.1"
+    "vite-tsconfig-paths": "5.1.1",
+    "vitest": "2.1.4"
   }
 }

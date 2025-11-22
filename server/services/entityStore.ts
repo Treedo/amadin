@@ -25,7 +25,7 @@ export interface ReferenceOptionRow {
 
 export async function listEntityRecords(entity: DemoEntity): Promise<EntityRecord[]> {
   const tableName = modelName(entity.code);
-  const query = `SELECT * FROM "${tableName}" ORDER BY "createdAt" DESC`;
+  const query = `SELECT * FROM "${tableName}" WHERE "markedForDeletion" = FALSE ORDER BY "createdAt" DESC`;
   const result = await runQuery(query);
   logger.debug(`Fetched ${result.rowCount ?? 0} record(s) from ${tableName}`);
   return result.rows.map(mapRowToRecord);
@@ -95,13 +95,13 @@ export async function searchEntityReferenceOptions(
   const labelSelect = labelColumn ? `"${labelColumn}" AS label` : '"id"::text AS label';
 
   if (options.values && options.values.length > 0) {
-    const statement = `SELECT "id", ${labelSelect} FROM "${tableName}" WHERE "id" = ANY($1::text[])`;
+    const statement = `SELECT "id", ${labelSelect} FROM "${tableName}" WHERE "id" = ANY($1::text[]) AND "markedForDeletion" = FALSE`;
     const result = await runQuery(statement, [options.values]);
     return normalizeReferenceRows(result.rows);
   }
 
   const limit = Math.max(1, Math.min(options.limit ?? 20, 100));
-  const clauses: string[] = [];
+  const clauses: string[] = ['"markedForDeletion" = FALSE'];
   const params: unknown[] = [];
 
   if (options.search && options.search.trim()) {
@@ -116,6 +116,13 @@ export async function searchEntityReferenceOptions(
   const statement = `SELECT "id", ${labelSelect} FROM "${tableName}" ${where} ORDER BY ${orderColumn} ASC LIMIT ${limit}`;
   const result = await runQuery(statement, params);
   return normalizeReferenceRows(result.rows);
+}
+
+export async function markEntityRecordDeleted(entity: DemoEntity, recordId: string): Promise<boolean> {
+  const tableName = modelName(entity.code);
+  const statement = `UPDATE "${tableName}" SET "markedForDeletion" = TRUE, "updatedAt" = CURRENT_TIMESTAMP WHERE "id" = $1 AND "markedForDeletion" = FALSE RETURNING "id"`;
+  const result = await runQuery(statement, [recordId]);
+  return Boolean(result.rowCount && result.rowCount > 0);
 }
 
 function prepareInsert(fields: DemoField[], payload: Record<string, unknown>) {
