@@ -1,0 +1,40 @@
+{
+  "id": "order-picking",
+  "name": "Order Picking Sheet",
+  "layout": [
+    {
+      "id": "order-picking-tabs",
+      "type": "tabs",
+      "tabs": [
+        {
+          "id": "order-picking-overview",
+          "title": "Overview",
+          "children": [
+            { "id": "order-picking-number", "type": "field", "label": "Order", "fieldCode": "orderNumber" },
+            { "id": "order-picking-warehouse", "type": "field", "label": "Warehouse", "fieldCode": "warehouse" }
+          ]
+        },
+        {
+          "id": "order-picking-items",
+          "title": "Items",
+          "children": [
+            {
+              "id": "order-picking-table",
+              "type": "table",
+              "title": "Pick List",
+              "columns": [
+                { "id": "pick-item", "label": "Item", "fieldCode": "item" },
+                { "id": "pick-location", "label": "Location", "fieldCode": "location" },
+                { "id": "pick-qty", "label": "Qty", "fieldCode": "quantity" }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "version": "0.1",
+    "mode": "warehouse"
+  }
+}

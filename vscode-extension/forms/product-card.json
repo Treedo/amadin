@@ -1,0 +1,30 @@
+{
+  "id": "product-card",
+  "name": "Product Card",
+  "layout": [
+    {
+      "id": "product-card-main",
+      "type": "group",
+      "title": "Product",
+      "direction": "vertical",
+      "children": [
+        { "id": "product-card-name", "type": "field", "label": "Name", "fieldCode": "name" },
+        { "id": "product-card-sku", "type": "field", "label": "SKU", "fieldCode": "sku" },
+        { "id": "product-card-unit", "type": "field", "label": "Unit", "fieldCode": "unit" }
+      ]
+    },
+    {
+      "id": "product-card-pricing",
+      "type": "group",
+      "title": "Pricing",
+      "direction": "horizontal",
+      "children": [
+        { "id": "product-card-price", "type": "field", "label": "Price", "fieldCode": "price" },
+        { "id": "product-card-currency", "type": "field", "label": "Currency", "fieldCode": "currency" }
+      ]
+    }
+  ],
+  "meta": {
+    "version": "0.1"
+  }
+}

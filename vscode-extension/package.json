@@ -22,6 +22,11 @@
         "command": "amadin.openConfigurationDetails",
         "title": "Amadin: Show Configuration Details",
         "category": "Amadin"
+      },
+      {
+        "command": "amadin.openFormDesigner",
+        "title": "Amadin: Open Form Designer",
+        "category": "Amadin"
       }
     ],
     "viewsContainers": {

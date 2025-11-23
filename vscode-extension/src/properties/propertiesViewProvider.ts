@@ -136,6 +136,7 @@ export class PropertiesViewProvider implements vscode.WebviewViewProvider, vscod
           return;
         }
         const metadataEntries = node.metadata ? Object.entries(node.metadata) : [];
+        const formJson = node.formModel ? JSON.stringify(node.formModel, null, 2) : undefined;
         const description = node.description ? node.description : '—';
         const children = Array.isArray(node.children) ? node.children.length : 0;
         const metadataHtml = metadataEntries.length
@@ -166,7 +167,16 @@ export class PropertiesViewProvider implements vscode.WebviewViewProvider, vscod
           '<dt>Дочірні</dt>',
           '<dd>' + escapeHtml(children) + '</dd>',
           '</dl>',
-          metadataHtml
+          metadataHtml,
+          formJson
+            ? '
+          <div class="metadata">
+            <h3>Form JSON</h3>
+            <pre style="margin:0; white-space:pre-wrap; font-family:var(--vscode-editor-font-family, monospace); font-size:0.8rem;">' +
+              escapeHtml(formJson) +
+              '</pre>
+          </div>'
+            : ''
         ].join('');
 
         app.innerHTML = markup;

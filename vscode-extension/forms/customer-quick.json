@@ -1,0 +1,20 @@
+{
+  "id": "customer-quick",
+  "name": "Customer Quick Edit",
+  "layout": [
+    {
+      "id": "customer-quick-row",
+      "type": "group",
+      "title": "Inline",
+      "direction": "horizontal",
+      "children": [
+        { "id": "customer-quick-name", "type": "field", "label": "Name", "fieldCode": "name" },
+        { "id": "customer-quick-email", "type": "field", "label": "Email", "fieldCode": "email" }
+      ]
+    }
+  ],
+  "meta": {
+    "version": "0.1",
+    "mode": "inline"
+  }
+}

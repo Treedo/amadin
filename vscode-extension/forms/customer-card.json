@@ -1,0 +1,29 @@
+{
+  "id": "customer-card",
+  "name": "Customer Card",
+  "layout": [
+    {
+      "id": "customer-card-main",
+      "type": "group",
+      "title": "General",
+      "direction": "vertical",
+      "children": [
+        { "id": "customer-card-name", "type": "field", "label": "Name", "fieldCode": "name" },
+        { "id": "customer-card-code", "type": "field", "label": "Code", "fieldCode": "code" },
+        {
+          "id": "customer-card-contacts",
+          "type": "group",
+          "title": "Contacts",
+          "direction": "horizontal",
+          "children": [
+            { "id": "customer-card-email", "type": "field", "label": "Email", "fieldCode": "email" },
+            { "id": "customer-card-phone", "type": "field", "label": "Phone", "fieldCode": "phone" }
+          ]
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "version": "0.1"
+  }
+}

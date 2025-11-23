@@ -1,0 +1,30 @@
+{
+  "id": "order-entry",
+  "name": "Order Entry",
+  "layout": [
+    {
+      "id": "order-entry-header",
+      "type": "group",
+      "title": "Header",
+      "direction": "vertical",
+      "children": [
+        { "id": "order-entry-number", "type": "field", "label": "Number", "fieldCode": "number" },
+        { "id": "order-entry-date", "type": "field", "label": "Date", "fieldCode": "date" },
+        { "id": "order-entry-customer", "type": "field", "label": "Customer", "fieldCode": "customer" }
+      ]
+    },
+    {
+      "id": "order-entry-lines",
+      "type": "table",
+      "title": "Lines",
+      "columns": [
+        { "id": "col-item", "label": "Item", "fieldCode": "item" },
+        { "id": "col-qty", "label": "Qty", "fieldCode": "quantity" },
+        { "id": "col-price", "label": "Price", "fieldCode": "price" }
+      ]
+    }
+  ],
+  "meta": {
+    "version": "0.1"
+  }
+}

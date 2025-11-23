@@ -1,0 +1,39 @@
+{
+  "id": "sales-dashboard",
+  "name": "Sales Dashboard",
+  "layout": [
+    {
+      "id": "sales-dashboard-tabs",
+      "type": "tabs",
+      "tabs": [
+        {
+          "id": "sales-dashboard-summary",
+          "title": "Summary",
+          "children": [
+            { "id": "sales-dashboard-total", "type": "field", "label": "Total", "fieldCode": "total" },
+            { "id": "sales-dashboard-margin", "type": "field", "label": "Margin", "fieldCode": "margin" }
+          ]
+        },
+        {
+          "id": "sales-dashboard-regions",
+          "title": "Regions",
+          "children": [
+            {
+              "id": "sales-dashboard-regions-table",
+              "type": "table",
+              "title": "By Region",
+              "columns": [
+                { "id": "region-name", "label": "Region", "fieldCode": "region" },
+                { "id": "region-total", "label": "Total", "fieldCode": "total" }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "version": "0.1",
+    "scope": "global"
+  }
+}

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; img-src data:; style-src {{cspSource}}; script-src 'nonce-{{nonce}}';"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Amadin Form Designer</title>
+    <link rel="stylesheet" href="{{stylesUri}}" />
+  </head>
+  <body>
+    <div id="app" class="designer-root">
+      <div class="empty-state">Select a form node to start designing.</div>
+    </div>
+    <script nonce="{{nonce}}" src="{{codeJarUri}}"></script>
+    <script nonce="{{nonce}}" src="{{scriptUri}}"></script>
+  </body>
+</html>

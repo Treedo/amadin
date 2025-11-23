@@ -4,6 +4,7 @@ import { buildSampleConfigurationTree } from './tree/sampleData';
 import { ConfigurationNodeData } from './tree/types';
 import { SelectionBus } from './selectionBus';
 import { PropertiesViewProvider } from './properties/propertiesViewProvider';
+import { FormDesignerPanelManager } from './views/FormDesignerPanel';
 
 export function activate(context: vscode.ExtensionContext): void {
   const rootModel = buildSampleConfigurationTree();
@@ -22,14 +23,37 @@ export function activate(context: vscode.ExtensionContext): void {
     await vscode.commands.executeCommand('workbench.view.extension.amadinConfiguration');
   });
 
+  const formDesignerPanels = new FormDesignerPanelManager(context.extensionUri, selectionBus);
+
+  const openFormDesigner = vscode.commands.registerCommand(
+    'amadin.openFormDesigner',
+    (node?: ConfigurationNodeData) => {
+      const target = node ?? selectionBus.getSelection();
+      if (!target) {
+        void vscode.window.showInformationMessage('Спершу оберіть форму у дереві конфігурацій.');
+        return;
+      }
+      if (target.kind !== 'form') {
+        void vscode.window.showInformationMessage('Цей елемент не є формою.');
+        return;
+      }
+      selectionBus.setSelection(target);
+      formDesignerPanels.open(target);
+    }
+  );
+
   const openDetails = vscode.commands.registerCommand(
     'amadin.openConfigurationDetails',
     (node: ConfigurationNodeData | undefined) => {
       if (!node) {
         return;
       }
-      const message = buildNodeSummary(node);
-      vscode.window.showInformationMessage(message);
+      if (node.kind === 'form') {
+        void vscode.commands.executeCommand('amadin.openFormDesigner', node);
+        return;
+      }
+      const summary = buildNodeSummary(node);
+      void vscode.window.showInformationMessage(summary);
     }
   );
 
@@ -45,7 +69,15 @@ export function activate(context: vscode.ExtensionContext): void {
     selectionBus.setSelection(first?.node);
   });
 
-  context.subscriptions.push(openTree, openDetails, propertiesProvider, propertiesRegistration, selectionListener);
+  context.subscriptions.push(
+    openTree,
+    openDetails,
+    openFormDesigner,
+    propertiesProvider,
+    propertiesRegistration,
+    formDesignerPanels,
+    selectionListener
+  );
 }
 
 export function deactivate(): void {

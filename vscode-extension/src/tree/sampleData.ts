@@ -1,15 +1,11 @@
-import { ConfigurationNodeData } from './types';
+import { ConfigurationNodeData, AmadinFormModel } from './types';
 
 export function buildSampleConfigurationTree(): ConfigurationNodeData {
   return {
     id: 'amadin-root',
     label: 'AMADIN CONFIGURATION',
     kind: 'root',
-    children: [
-      buildDatabasesSection(),
-      buildCoreSection(),
-      buildCliSection()
-    ]
+    children: [buildDatabasesSection(), buildCoreSection(), buildCliSection()]
   };
 }
 
@@ -43,11 +39,7 @@ function buildDemoDatabase(): ConfigurationNodeData {
     label: 'demo',
     kind: 'database',
     description: 'DatabaseConfig',
-    children: [
-      buildDemoModulesSection(),
-      buildDemoUsersSection(),
-      buildDemoSettingsSection()
-    ]
+    children: [buildDemoModulesSection(), buildDemoUsersSection(), buildDemoSettingsSection()]
   };
 }
 
@@ -56,10 +48,7 @@ function buildDemoModulesSection(): ConfigurationNodeData {
     id: 'amadin-database-demo-modules',
     label: 'Modules',
     kind: 'section',
-    children: [
-      buildSalesModule(),
-      buildInventoryModule()
-    ]
+    children: [buildSalesModule(), buildInventoryModule()]
   };
 }
 
@@ -68,12 +57,7 @@ function buildSalesModule(): ConfigurationNodeData {
     id: 'amadin-module-sales',
     label: 'Sales',
     kind: 'module',
-    children: [
-      buildSalesEntities(),
-      buildSalesForms(),
-      buildSalesApi(),
-      buildSalesPermissions()
-    ]
+    children: [buildSalesEntities(), buildSalesForms(), buildSalesApi(), buildSalesPermissions()]
   };
 }
 
@@ -95,8 +79,18 @@ function buildSalesEntities(): ConfigurationNodeData {
             fieldNode('amadin-field-customer-email', 'email', 'string')
           ]),
           buildFormsGroup('amadin-entity-customer-forms', [
-            formNode('amadin-entity-customer-card', 'Customer Card', 'Main directory form'),
-            formNode('amadin-entity-customer-quick', 'Quick Edit', 'Compact inline editor')
+            formNode(
+              'amadin-form-customer-card',
+              'Customer Card',
+              buildSampleFormModel('customer-card', 'Customer Card'),
+              'customer-card.json'
+            ),
+            formNode(
+              'amadin-form-customer-quick',
+              'Customer Quick Edit',
+              buildSampleFormModel('customer-quick', 'Customer Quick Edit'),
+              'customer-quick.json'
+            )
           ])
         ]
       },
@@ -113,8 +107,18 @@ function buildSalesEntities(): ConfigurationNodeData {
             fieldNode('amadin-field-order-total', 'total', 'float')
           ]),
           buildFormsGroup('amadin-entity-order-forms', [
-            formNode('amadin-entity-order-entry', 'Order Entry', 'Primary document form'),
-            formNode('amadin-entity-order-picking', 'Picking Sheet', 'Warehouse picking UI')
+            formNode(
+              'amadin-form-order-entry',
+              'Order Entry',
+              buildSampleFormModel('order-entry', 'Order Entry'),
+              'order-entry.json'
+            ),
+            formNode(
+              'amadin-form-order-picking',
+              'Order Picking',
+              buildSampleFormModel('order-picking', 'Order Picking Sheet'),
+              'order-picking.json'
+            )
           ])
         ]
       },
@@ -128,6 +132,28 @@ function buildSalesEntities(): ConfigurationNodeData {
         label: 'SalesByCustomer',
         kind: 'entityReport'
       }
+    ]
+  };
+}
+
+function buildSalesForms(): ConfigurationNodeData {
+  return {
+    id: 'amadin-module-sales-forms',
+    label: 'Forms',
+    kind: 'section',
+    children: [
+      formNode(
+        'amadin-form-sales-dashboard',
+        'Sales Dashboard',
+        buildSampleFormModel('sales-dashboard', 'Sales Dashboard'),
+        'sales-dashboard.json'
+      ),
+      formNode(
+        'amadin-form-sales-forecast',
+        'Sales Forecast',
+        buildSampleFormModel('sales-forecast', 'Sales Forecast Workspace'),
+        'sales-forecast.json'
+      )
     ]
   };
 }
@@ -167,18 +193,6 @@ function buildSalesPermissions(): ConfigurationNodeData {
   };
 }
 
-function buildSalesForms(): ConfigurationNodeData {
-  return {
-    id: 'amadin-module-sales-forms',
-    label: 'Forms',
-    kind: 'section',
-    children: [
-      formNode('amadin-form-sales-dashboard', 'Sales Dashboard', 'Cross-entity analytics'),
-      formNode('amadin-form-sales-forecast', 'Sales Forecast', 'Scenario planning workspace')
-    ]
-  };
-}
-
 function buildInventoryModule(): ConfigurationNodeData {
   return {
     id: 'amadin-module-inventory',
@@ -197,7 +211,12 @@ function buildInventoryModule(): ConfigurationNodeData {
             description: 'Directory',
             children: [
               buildFormsGroup('amadin-entity-product-forms', [
-                formNode('amadin-entity-product-card', 'Product Card', 'Comprehensive product form')
+                formNode(
+                  'amadin-form-product-card',
+                  'Product Card',
+                  buildSampleFormModel('product-card', 'Product Card'),
+                  'product-card.json'
+                )
               ])
             ]
           }
@@ -214,7 +233,12 @@ function buildInventoryForms(): ConfigurationNodeData {
     label: 'Forms',
     kind: 'section',
     children: [
-      formNode('amadin-form-stock-balance', 'Stock Balance', 'Global stock snapshot')
+      formNode(
+        'amadin-form-stock-balance',
+        'Stock Balance',
+        buildSampleFormModel('stock-balance', 'Stock Balance Overview'),
+        'stock-balance.json'
+      )
     ]
   };
 }
@@ -225,16 +249,8 @@ function buildDemoUsersSection(): ConfigurationNodeData {
     label: 'Users',
     kind: 'section',
     children: [
-      {
-        id: 'amadin-user-admin',
-        label: 'admin',
-        kind: 'user'
-      },
-      {
-        id: 'amadin-user-viewer',
-        label: 'viewer',
-        kind: 'user'
-      }
+      { id: 'amadin-user-admin', label: 'admin', kind: 'user' },
+      { id: 'amadin-user-viewer', label: 'viewer', kind: 'user' }
     ]
   };
 }
@@ -244,13 +260,7 @@ function buildDemoSettingsSection(): ConfigurationNodeData {
     id: 'amadin-database-demo-settings',
     label: 'Settings',
     kind: 'section',
-    children: [
-      {
-        id: 'amadin-setting-database-url',
-        label: 'Database URL',
-        kind: 'setting'
-      }
-    ]
+    children: [{ id: 'amadin-setting-database-url', label: 'Database URL', kind: 'setting' }]
   };
 }
 
@@ -265,33 +275,13 @@ function buildCoreSection(): ConfigurationNodeData {
         label: 'Modules',
         kind: 'section',
         children: [
-          {
-            id: 'amadin-core-module-system',
-            label: 'System',
-            kind: 'module'
-          },
-          {
-            id: 'amadin-core-module-security',
-            label: 'Security',
-            kind: 'module'
-          },
-          {
-            id: 'amadin-core-module-metadata',
-            label: 'Metadata',
-            kind: 'module'
-          }
+          { id: 'amadin-core-module-system', label: 'System', kind: 'module' },
+          { id: 'amadin-core-module-security', label: 'Security', kind: 'module' },
+          { id: 'amadin-core-module-metadata', label: 'Metadata', kind: 'module' }
         ]
       },
-      {
-        id: 'amadin-core-entity-templates',
-        label: 'Entity Templates',
-        kind: 'section'
-      },
-      {
-        id: 'amadin-core-base-types',
-        label: 'Base Types',
-        kind: 'section'
-      }
+      { id: 'amadin-core-entity-templates', label: 'Entity Templates', kind: 'section' },
+      { id: 'amadin-core-base-types', label: 'Base Types', kind: 'section' }
     ]
   };
 }
@@ -336,12 +326,54 @@ function fieldNode(id: string, name: string, type: string): ConfigurationNodeDat
   };
 }
 
-function formNode(id: string, name: string, description?: string): ConfigurationNodeData {
+function formNode(id: string, name: string, formModel: AmadinFormModel, formSource?: string): ConfigurationNodeData {
   return {
     id,
     label: name,
     kind: 'form',
-    description
+    description: formModel.name,
+    formModel,
+    formSource
+  };
+}
+
+function buildSampleFormModel(id: string, name: string): AmadinFormModel {
+  return {
+    id,
+    name,
+    layout: [
+      {
+        id: `${id}-main`,
+        type: 'group',
+        title: 'Main',
+        direction: 'vertical',
+        children: [
+          {
+            id: `${id}-field-primary`,
+            type: 'field',
+            label: 'Primary Field',
+            fieldCode: 'name'
+          },
+          {
+            id: `${id}-details`,
+            type: 'group',
+            title: 'Details',
+            direction: 'horizontal',
+            children: [
+              {
+                id: `${id}-field-secondary`,
+                type: 'field',
+                label: 'Secondary',
+                fieldCode: 'description'
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    meta: {
+      version: '0.1'
+    }
   };
 }
 

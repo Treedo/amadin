@@ -1,0 +1,29 @@
+{
+  "id": "stock-balance",
+  "name": "Stock Balance Overview",
+  "layout": [
+    {
+      "id": "stock-balance-filters",
+      "type": "group",
+      "title": "Filters",
+      "direction": "horizontal",
+      "children": [
+        { "id": "stock-balance-warehouse", "type": "field", "label": "Warehouse", "fieldCode": "warehouse" },
+        { "id": "stock-balance-date", "type": "field", "label": "Date", "fieldCode": "date" }
+      ]
+    },
+    {
+      "id": "stock-balance-table",
+      "type": "table",
+      "title": "Balances",
+      "columns": [
+        { "id": "balance-item", "label": "Item", "fieldCode": "item" },
+        { "id": "balance-qty", "label": "Qty", "fieldCode": "quantity" },
+        { "id": "balance-cost", "label": "Cost", "fieldCode": "cost" }
+      ]
+    }
+  ],
+  "meta": {
+    "version": "0.1"
+  }
+}

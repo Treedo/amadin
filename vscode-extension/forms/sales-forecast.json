@@ -1,0 +1,29 @@
+{
+  "id": "sales-forecast",
+  "name": "Sales Forecast Workspace",
+  "layout": [
+    {
+      "id": "sales-forecast-main",
+      "type": "group",
+      "title": "Planning",
+      "direction": "vertical",
+      "children": [
+        { "id": "sales-forecast-period", "type": "field", "label": "Period", "fieldCode": "period" },
+        { "id": "sales-forecast-scenario", "type": "field", "label": "Scenario", "fieldCode": "scenario" }
+      ]
+    },
+    {
+      "id": "sales-forecast-table",
+      "type": "table",
+      "title": "Forecast",
+      "columns": [
+        { "id": "forecast-product", "label": "Product", "fieldCode": "product" },
+        { "id": "forecast-plan", "label": "Plan", "fieldCode": "plan" },
+        { "id": "forecast-fact", "label": "Fact", "fieldCode": "fact" }
+      ]
+    }
+  ],
+  "meta": {
+    "version": "0.1"
+  }
+}
